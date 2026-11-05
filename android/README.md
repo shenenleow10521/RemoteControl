@@ -70,3 +70,7 @@ Main screen is landscape with direction/stop pad on the left and left/right clam
 ## Joystick layout in 1.0.3
 
 Landscape gamepad: draggable joystick on the left, four clamp buttons on the right, Bluetooth in the header. Joystick release/cancellation returns to center and sends S. A central dead zone prevents unintended movement; hysteresis reduces rapid axis switching near diagonal angles. Existing Arduino firmware supports four directions, so diagonals choose the dominant axis and stick distance does not change PWM speed. The existing forward/reverse direction calibration is preserved. Physical Bluetooth and joystick behavior still need phone/robot testing.
+
+## Button-only landscape Pad in 1.0.4
+
+Install RECRemote-Pad-v1.0.4.apk and launch **REC Remote Pad**, not the previously installed REC Remote app. The new application ID is com.shenen.rec.pad.debug, allowing it to coexist with the older app and avoiding the reported package/signature conflict. Orientation is fixed to landscape. Main screen contains only direction/stop buttons, four left/right clamp open/close buttons and Bluetooth connection. No joystick or overflow menu is shown. The old program must still implement its corresponding servo commands.

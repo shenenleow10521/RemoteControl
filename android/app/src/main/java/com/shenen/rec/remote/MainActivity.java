@@ -48,7 +48,6 @@ public final class MainActivity extends Activity {
     private LinearLayout content;
     private TextView connectionTitle, connectionDetail;
     private Button connectButton, padStop;
-    private JoystickView joystick;
     private boolean connecting, destroyed, reverseArm, reverseGrip = true, reverseDrive = true;
     private AlertDialog activeDialog;
     private TextView terminalOutput;
@@ -64,6 +63,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         engine = new ControllerEngine(SystemClock::elapsedRealtime, new ControllerEngine.Listener() {
             public void changed() { if (!destroyed && connectionTitle != null) render(); }
             public void notice(String text) { if (!destroyed) { connecting = false; bluetooth.disconnect(); MainActivity.this.notice(text); render(); } }
@@ -102,30 +102,21 @@ public final class MainActivity extends Activity {
         outer.addView(scroll,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
 
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC REMOTE",16,MINT,true); status.addView(connectionTitle);
+        LinearLayout status=column(); connectionTitle=label("REC REMOTE PAD",16,MINT,true); status.addView(connectionTitle);
         connectionDetail=label("",10,MUTED,false); status.addView(connectionDetail); header.addView(status,weight());
         connectButton=button("连接蓝牙",MINT,INK); connectButton.setOnClickListener(v->{
             if(connecting || bluetooth.isConnected() || engine.mode==ControllerEngine.Mode.HANDSHAKE) disconnect(); else showDevices();
         }); header.addView(connectButton,new LinearLayout.LayoutParams(dp(112),dp(48)));
-        Button options=button("⋮",PANEL,TEXT); options.setContentDescription("连接和方向设置");
-        options.setOnClickListener(v->{engine.stop(false);new AlertDialog.Builder(this).setTitle("设置")
-            .setItems(new String[]{"方向与接线设置","系统蓝牙配对","串口终端"},(d,index)->{
-                if(index==0)showSettings();else if(index==1)startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));else showTerminal();
-            }).setNegativeButton("关闭",null).show();});
-        LinearLayout.LayoutParams optionParams=new LinearLayout.LayoutParams(dp(44),dp(48));optionParams.setMargins(dp(8),0,0,0);header.addView(options,optionParams);
         content.addView(header);space(content,8);
 
         LinearLayout controls=row(); controls.setGravity(Gravity.TOP);
         LinearLayout drive=panel();drive.setPadding(dp(12),dp(8),dp(12),dp(8));
-        drive.addView(label("行驶摇杆",14,TEXT,true));
-        joystick=new JoystickView(this,command->{
-            if(command=='S')engine.release(ControllerEngine.Group.DRIVE,"joystick");
-            else engine.start(ControllerEngine.Group.DRIVE,"joystick",ButtonMapping.map(command,reverseDrive,false,false));
-        });
-        drive.addView(joystick,new LinearLayout.LayoutParams(-1,dp(186)));
-        padStop=button("■  停止",Color.rgb(64,43,47),Color.rgb(255,180,170));
-        padStop.setOnClickListener(v->{joystick.cancelGesture();if(engine.locked)engine.resume();else engine.stop(false);});drive.addView(padStop);
-        drive.addView(label("拖动控制方向 · 松手回中停止",10,MUTED,false));
+        LinearLayout first=row();first.addView(blank(),weight());first.addView(move("↑\n前进",ControllerEngine.Group.DRIVE,'F'),weight());first.addView(blank(),weight());drive.addView(first);
+        LinearLayout middle=row();middle.addView(move("←\n左转",ControllerEngine.Group.DRIVE,'L'),weight());
+        padStop=button("■\n停止",Color.rgb(64,43,47),Color.rgb(255,180,170));padStop.setMinHeight(dp(56));
+        padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(false);});middle.addView(padStop,weight());
+        middle.addView(move("→\n右转",ControllerEngine.Group.DRIVE,'R'),weight());drive.addView(middle);
+        LinearLayout last=row();last.addView(blank(),weight());last.addView(move("↓\n后退",ControllerEngine.Group.DRIVE,'B'),weight());last.addView(blank(),weight());drive.addView(last);
         LinearLayout.LayoutParams leftParams=new LinearLayout.LayoutParams(0,-2,1.15f);leftParams.setMargins(0,0,dp(10),0);controls.addView(drive,leftParams);
 
         LinearLayout clamps=panel();clamps.setPadding(dp(12),dp(8),dp(12),dp(8));
@@ -166,11 +157,10 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC REMOTE · 未连接");
+        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC REMOTE PAD · 未连接");
         connectionDetail.setText(engine.locked?"动作已停止，点中间「恢复」继续":connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
         connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
-        if(joystick!=null){joystick.setEnabled(enabled);joystick.setAlpha(enabled?1f:.35f);}
         padStop.setEnabled(engine.ready);padStop.setAlpha(engine.ready?1f:.4f);
         padStop.setText(engine.locked?"▶  恢复":"■  停止");
         if(terminalSend!=null)terminalSend.setEnabled(connected);
