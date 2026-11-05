@@ -1,3 +1,5 @@
+Version 1.0.1: corrected forward/reverse and gripper open/close button directions for this robot. Direction settings persist between app launches. Raw terminal text remains literal.
+
 Native Android 8.0+ controller and Bluetooth Classic SPP serial terminal for HC-05 / HC-06.
 
 - Direct connection to already-paired Bluetooth Classic devices, without an Arduino-specific handshake.

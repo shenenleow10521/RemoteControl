@@ -48,7 +48,7 @@ public final class MainActivity extends Activity {
     private LinearLayout content;
     private TextView connectionTitle, connectionDetail, telemetry, speedText, timerText, modeText, logText;
     private Button connectButton, demoButton, resumeButton, speedUp, speedDown, stopButton, padStop, statusButton, clockButton;
-    private boolean connecting, destroyed, reverseArm, reverseGrip;
+    private boolean connecting, destroyed, reverseArm, reverseGrip = true, reverseDrive = true;
     private AlertDialog activeDialog;
     private TextView terminalOutput;
     private Button terminalSend;
@@ -88,6 +88,10 @@ public final class MainActivity extends Activity {
                 connecting = false; engine.disconnect(); notice("连接中断：" + reason); render();
             }
         });
+        android.content.SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+        reverseDrive=prefs.getBoolean("reverseDrive",true);
+        reverseGrip=prefs.getBoolean("reverseGrip",true);
+        reverseArm=prefs.getBoolean("reverseArm",false);
         buildUI(); render(); renderClock(); main.post(ticker);
     }
 
@@ -176,9 +180,7 @@ public final class MainActivity extends Activity {
                 case MotionEvent.ACTION_DOWN:
                     if(!button.isEnabled()) return false;
                     view.getParent().requestDisallowInterceptTouchEvent(true);
-                    char mapped=command;
-                    if(group==ControllerEngine.Group.ARM && reverseArm) mapped=command=='W'?'X':'W';
-                    if(group==ControllerEngine.Group.GRIP && reverseGrip) mapped=command=='E'?'C':'E';
+                    char mapped=ButtonMapping.map(command,reverseDrive,reverseArm,reverseGrip);
                     engine.start(group,owner,mapped); return true;
                 case MotionEvent.ACTION_MOVE:
                     if(event.getX()<0 || event.getX()>view.getWidth() || event.getY()<0 || event.getY()>view.getHeight()) engine.release(group,owner);
@@ -191,9 +193,7 @@ public final class MainActivity extends Activity {
         });
         // TalkBack/keyboard activation is a bounded pulse rather than a toggle.
         button.setOnClickListener(v -> {
-            char mapped=command;
-            if(group==ControllerEngine.Group.ARM && reverseArm) mapped=command=='W'?'X':'W';
-            if(group==ControllerEngine.Group.GRIP && reverseGrip) mapped=command=='E'?'C':'E';
+            char mapped=ButtonMapping.map(command,reverseDrive,reverseArm,reverseGrip);
             engine.start(group,owner,mapped); main.postDelayed(() -> engine.release(group,owner),160);
         });
         motion.add(button); return button;
@@ -259,8 +259,9 @@ public final class MainActivity extends Activity {
     private void showSettings() {
         engine.stop(false);
         LinearLayout settings=column(); settings.setPadding(dp(20),dp(8),dp(20),dp(12));
-        CheckBox arm=new CheckBox(this); arm.setText("反转机械臂方向"); arm.setChecked(reverseArm); arm.setTextColor(TEXT); arm.setOnCheckedChangeListener((v,c)->reverseArm=c); settings.addView(arm);
-        CheckBox grip=new CheckBox(this); grip.setText("反转夹爪方向"); grip.setChecked(reverseGrip); grip.setTextColor(TEXT); grip.setOnCheckedChangeListener((v,c)->reverseGrip=c); settings.addView(grip);
+        CheckBox drive=new CheckBox(this); drive.setText("反转前进 / 后退"); drive.setChecked(reverseDrive); drive.setTextColor(TEXT); drive.setOnCheckedChangeListener((v,c)->{reverseDrive=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseDrive",c).apply();}); settings.addView(drive);
+        CheckBox arm=new CheckBox(this); arm.setText("反转机械臂方向"); arm.setChecked(reverseArm); arm.setTextColor(TEXT); arm.setOnCheckedChangeListener((v,c)->{reverseArm=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseArm",c).apply();}); settings.addView(arm);
+        CheckBox grip=new CheckBox(this); grip.setText("反转夹爪方向"); grip.setChecked(reverseGrip); grip.setTextColor(TEXT); grip.setOnCheckedChangeListener((v,c)->{reverseGrip=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseGrip",c).apply();}); settings.addView(grip);
         settings.addView(label("Bluetooth Classic / SPP：适用于 HC-05 / HC-06；不是 BLE。先在系统设置配对，再在本 App 连接，不能同时被另一终端占用。\n\n串口终端连接后可直接收发，不要求 REC1 握手。旧 PWM-only 程序只支持它本身已有的指令，机械臂与夹爪不会因出现按钮就自动获得支持。\n\nNano / Uno + L298N\nIN1 D2 · IN2 D3 · IN3 D4 · IN4 D7\nENA D5 · ENB D6 · Arm D9 · Grip D10\n\nHC-05 TX → D0；D1 → HC-05 RX 须匹配电平；全部共地。上传程序前拔开 D0 / D1 的模块线。\n\n全部功能及固件断线停止需上传仓库的 REC_BLE_Robot 配套程序。UART_BAUD 默认 9600，须与 HC-05 的 UART 波特率一致；App 中没有 UART 波特率设置。\n\n旧程序不具备固件超时保护，蓝牙断线后未必能停止。按住快捷方向键每 120 ms 重发，松开发 S；急停发 S!。配套固件约 600 ms 无该执行器命令即停止。后台会断开。软件急停不切断电源。\n\n角度和方向须空载校准，默认逻辑角度 90°，上电舵机可能移动。\n\nHandbook：全程尺寸 ≤20×20×20 cm；电池标称 ≤9 V；须有实体断电开关；最多携带两块方块，不可在地面推拉。先完成己方目标放置才能进入 Center Zone。开始、结束、Retry 以裁判指令为准。",12,MUTED,false));
         ScrollView scroll=new ScrollView(this); scroll.addView(settings);
         activeDialog=new AlertDialog.Builder(this).setTitle("设置与连接说明").setView(scroll).setPositiveButton("完成",null)

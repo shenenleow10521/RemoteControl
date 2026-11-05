@@ -58,3 +58,7 @@ gradle :app:testDebugUnitTest :app:assembleDebug
 The GitHub workflow builds the APK, runs control-engine unit checks and verifies the development signature. Pure Java checks cover raw terminal mode without REC1, strict handshake mode, old/new stop compatibility, independent actuator ownership, emergency latch, interrupted holds, feedback timeouts, bounds and demo isolation. A built APK is not proof of a working physical radio link: phone permission behavior, pairing, socket connection, UART baud and motors/servos still require device testing.
 
 No Internet permission, analytics, cloud account, location permission or background control service is included. The app only lists paired devices; it does not discover BLE devices. Physical BLE modules require a separate BLE client and are outside this Android Classic SPP build.
+
+## Direction correction in 1.0.1
+
+The main remote now sends B for Forward, F for Reverse, C for Grip Open, and E for Grip Close by default, matching the reported robot wiring/orientation. Left/right turns and arm direction retain their defaults. Reverse Drive / Arm / Gripper settings are saved on the phone. These switches affect the main remote buttons, including assistive activation; raw terminal text and F/B/L/R/S terminal macros remain literal serial commands. No Arduino re-upload is required for this button-mapping correction.
