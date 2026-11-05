@@ -62,3 +62,7 @@ No Internet permission, analytics, cloud account, location permission or backgro
 ## Direction correction in 1.0.1
 
 The main remote now sends B for Forward, F for Reverse, C for Grip Open, and E for Grip Close by default, matching the reported robot wiring/orientation. Left/right turns and arm direction retain their defaults. Reverse Drive / Arm / Gripper settings are saved on the phone. These switches affect the main remote buttons, including assistive activation; raw terminal text and F/B/L/R/S terminal macros remain literal serial commands. No Arduino re-upload is required for this button-mapping correction.
+
+## Minimal interface in 1.0.2
+
+Main screen is landscape with direction/stop pad on the left and left/right clamp open/close buttons on the right. The prior arm servo channel (D9, W/X) is labelled Left Clamp; the prior gripper channel (D10, E/C) is labelled Right Clamp. Existing corrected drive and right-clamp directions remain in effect; independent direction switches persist in overflow settings. Physical wiring must match this channel assignment. Bluetooth connection is in the header, with settings/system pairing/raw terminal in the overflow menu. Speed controls, clock, demo and telemetry panels are removed from the main interface. Stop is momentary; if lifecycle safety has latched motion, the same center button shows Resume.
