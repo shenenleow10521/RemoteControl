@@ -1,0 +1,79 @@
+name: Build REC iPhone App
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rec-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  firmware:
+    name: Check robot firmware
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test firmware command handling and watchdogs
+        working-directory: host_checks
+        run: |
+          g++ -std=c++11 -Wall -Wextra -pedantic -I stubs firmware_test.cpp -o /tmp/rec_firmware_check
+          /tmp/rec_firmware_check
+      - uses: arduino/setup-arduino-cli@v2
+      - name: Compile for Nano and Uno
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install arduino:avr
+          arduino-cli lib install Servo
+          arduino-cli compile --fqbn arduino:avr:nano REC_BLE_Robot
+          arduino-cli compile --fqbn arduino:avr:uno REC_BLE_Robot
+
+  ios:
+    name: Build unsigned iPhone IPA
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Compile native iPhone app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project RECRemote.xcodeproj \
+            -scheme RECRemote \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            build 2>&1 | tee build.log
+      - name: Package IPA for personal signing
+        run: |
+          mkdir -p dist/Payload
+          cp -R build/Build/Products/Release-iphoneos/RECRemote.app dist/Payload/
+          cd dist
+          zip -qry RECRemote-unsigned.ipa Payload
+      - name: Upload iPhone app
+        uses: actions/upload-artifact@v4
+        with:
+          name: RECRemote-iPhone-unsigned-IPA
+          path: dist/RECRemote-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+      - name: Save build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RECRemote-build-log
+          path: build.log
+          if-no-files-found: ignore
+          retention-days: 7
