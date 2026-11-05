@@ -1,4 +1,12 @@
-# REC iPhone Robot Remote
+# REC Robot Remote
+
+## Open the web controller
+
+**[Open REC Remote](https://rec-remote-shenen.leowshenen.chatgpt.site)** — opens directly in your browser and can be added to the home screen. The hosted Site currently requires the owner's ChatGPT sign-in. Use **试用演示** to try the controls without hardware. iPhone Safari can use the interface/demo, but actual robot control requires a browser with the matching BLE or serial API, or the signed native iPhone app. Home-screen installation does not change Bluetooth support.
+
+Web source, compatibility details and tests: [web/README.md](web/README.md). The browser version also supports HC-05 over a compatible Web Serial connection after system pairing; the native iPhone version requires BLE UART.
+
+## Native iPhone controller
 
 An iPhone/iPad Bluetooth LE controller and matching Arduino Nano/Uno firmware for your REC pick-and-place robot.
 

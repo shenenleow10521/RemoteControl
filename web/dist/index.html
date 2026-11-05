@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101b22">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="REC 机器人遥控：方向、PWM 速度、机械臂、夹爪和比赛计时。支持 BLE UART、兼容浏览器上的蓝牙串口，以及明确标注的界面演示。">
+  <title>REC Remote · 机器人遥控</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <a class="brand" href="./" aria-label="REC 遥控主页"><span class="brand-mark">R<span>↗</span></span><span><strong>REC<span class="light"> REMOTE</span></strong><small>PICK & PLACE / 2026</small></span></a>
+      <div class="header-actions"><button class="icon-button" id="installButton" aria-label="添加到手机主屏幕" title="添加到主屏幕"><svg viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M5 15v5h14v-5"/></svg></button><button class="icon-button" id="settingsButton" aria-label="设置与使用说明"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button></div>
+    </header>
+
+    <main>
+      <section class="intro"><div><div class="eyebrow"><span></span> OPERATOR CONSOLE</div><h1>稳稳夹起，<span>精准放下。</span></h1><p>方向、机械臂、夹爪，一屏掌控。</p></div><div class="robot-number">01<small>ROBOT CONTROL</small></div></section>
+
+      <section class="connection-bar" aria-label="机器人连接状态"><div class="connection-info"><span class="status-dot" id="statusDot"></span><div><strong id="connectionTitle">尚未连接机器人</strong><span id="connectionDetail">连接设备，或先试试操作界面</span></div></div><button class="button mint" id="connectButton"><svg viewBox="0 0 24 24"><path d="m7 7 10 10-5 4V3l5 4L7 17"/></svg><span>连接机器人</span></button></section>
+      <div class="compatibility" id="compatibility"><span class="info-symbol">i</span><span id="compatibilityText">正在检查浏览器连接能力…</span><button id="quickDemo">试用演示 →</button></div>
+
+      <div class="dashboard">
+        <div class="control-column">
+          <section class="panel drive-panel">
+            <div class="section-heading"><div><span class="eyebrow">01 / MOVEMENT</span><h2>行驶控制</h2></div><span class="chip" id="modeChip">未连接</span></div>
+            <div class="dpad" aria-label="方向控制">
+              <button class="motion direction up" data-group="drive" data-command="F" aria-label="向前，按住移动" disabled><svg viewBox="0 0 24 24"><path d="M12 20V4m-6 6 6-6 6 6"/></svg><span>前进</span></button>
+              <button class="motion direction left" data-group="drive" data-command="L" aria-label="向左旋转，按住移动" disabled><svg viewBox="0 0 24 24"><path d="M20 12H4m6-6-6 6 6 6"/></svg><span>左转</span></button>
+              <button class="pad-stop" id="padStop" aria-label="停止全部动作" disabled><span class="stop-square"></span><span>停止</span></button>
+              <button class="motion direction right" data-group="drive" data-command="R" aria-label="向右旋转，按住移动" disabled><svg viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></svg><span>右转</span></button>
+              <button class="motion direction down" data-group="drive" data-command="B" aria-label="后退，按住移动" disabled><svg viewBox="0 0 24 24"><path d="M12 4v16m-6-6 6 6 6-6"/></svg><span>后退</span></button>
+              <div class="dpad-note"><span class="keycap">↑</span><span>按住行驶<br>松开即停</span></div>
+            </div>
+            <div class="speed-section"><div><span>行驶速度 <small>PWM</small></span><strong id="speedValue">—<small>/ 255</small></strong></div><div class="speed-controls"><button id="speedDown" class="step-button" aria-label="降低速度" disabled>−</button><div class="speed-track"><div id="speedFill"></div></div><button id="speedUp" class="step-button" aria-label="提高速度" disabled>+</button></div><div class="speed-labels"><span>精细微调</span><span>步长 20 · 范围 80–255</span></div></div>
+          </section>
+
+          <section class="panel mechanism-panel"><div class="section-heading"><div><span class="eyebrow">02 / PICK & PLACE</span><h2>机械臂与夹爪</h2></div><svg class="arm-icon" viewBox="0 0 48 48"><path d="M6 40h30M14 40V29l12-9-9-10m9 10 11 5m0 0 5-5m-5 5 1 7"/><circle cx="14" cy="29" r="3"/><circle cx="26" cy="20" r="3"/><circle cx="17" cy="10" r="3"/></svg></div><div class="mechanism-controls"><div><span class="control-label">机械臂 <small>ARM</small></span><div class="button-pair"><button class="motion actuator" data-group="arm" data-command="W" disabled><span>↥</span>抬起</button><button class="motion actuator" data-group="arm" data-command="X" disabled><span>↧</span>放下</button></div></div><div><span class="control-label">夹爪 <small>GRIPPER</small></span><div class="button-pair"><button class="motion actuator" data-group="grip" data-command="E" disabled><span>↔</span>张开</button><button class="motion actuator" data-group="grip" data-command="C" disabled><span>⇥⇤</span>夹紧</button></div></div></div><p class="panel-note">按住微调 · 松开保持位置 · 方向可在设置中反转</p></section>
+
+          <button class="emergency" id="emergencyStop" disabled><span class="emergency-icon">■</span><span><strong>急停 / STOP ALL</strong><small>停止行驶、机械臂及夹爪动作</small></span><svg viewBox="0 0 24 24"><path d="M7 7h10v10H7z"/></svg></button>
+          <div class="resume-banner" id="resumeBanner" hidden><span>已停止全部动作</span><button id="resumeButton">恢复操作 →</button></div>
+        </div>
+
+        <aside class="feedback-column">
+          <section class="panel visualization-panel"><div class="section-heading"><div><span class="eyebrow">LIVE VIEW</span><h2>操作示意</h2></div><span class="live-tag" id="viewTag">界面示意</span></div><div class="field"><div class="field-grid"></div><div class="field-target"><span></span></div><div class="cube cube-one"></div><div class="cube cube-two"></div><div class="robot" id="robotVisual"><div class="robot-front"></div><div class="robot-wheel wheel-left"></div><div class="robot-wheel wheel-right"></div><div class="robot-body"><span>REC</span><i></i></div><div class="robot-jaw jaw-left" id="jawLeft"></div><div class="robot-jaw jaw-right" id="jawRight"></div></div><div class="field-coordinates">X — — &nbsp; Y — —</div><span class="field-label">PICK & PLACE</span></div><div class="telemetry"><div><span>机械臂指令角度</span><strong id="armValue">—<small>°</small></strong></div><div><span>夹爪指令角度</span><strong id="gripValue">—<small>°</small></strong></div><div><span>行驶状态</span><strong class="drive-state" id="driveState">待连接</strong></div></div><p class="panel-note" id="viewNote">仅作界面示意，不提供真实定位或夹取检测。</p></section>
+
+          <section class="panel clock-panel"><div class="section-heading"><div><span class="eyebrow">MATCH CLOCK</span><h2>比赛计时</h2></div><span class="clock-icon">◷</span></div><div class="timer" id="timer">03<span>:</span>00</div><div class="timer-track"><div id="timerFill"></div></div><div class="clock-actions"><button class="button mint" id="clockStart">开始计时 <span>↗</span></button><button class="button subtle" id="clockReset" aria-label="重置计时">↺</button></div><div class="clock-options"><button id="matchClock" class="selected">比赛 3:00</button><button id="calibrationClock">校准 1:00</button></div><button class="retry-button" id="retryButton">↶ 停止并申请 Retry</button><p class="panel-note">本地辅助计时；听从裁判指令。Retry 不会重置计时。</p></section>
+
+          <section class="practice-card" id="practiceCard"><div class="practice-icon">↗</div><div><strong>先熟悉一下手感</strong><p>无需连接，试用全部遥控按钮。</p></div><button id="demoButton">进入演示</button></section>
+        </aside>
+      </div>
+      <section class="status-console"><div><span class="console-dot"></span><strong>COMMAND LOG</strong><span id="lastCommand">等待操作</span></div><button id="refreshStatus" disabled>刷新状态 ↺</button><output id="consoleOutput">机器人连接后将在此显示反馈。</output></section>
+      <footer><span>REC / BUILD. PICK. PLACE.</span><button id="footerHelp">使用说明 & 连接方式 ↗</button></footer>
+    </main>
+  </div>
+
+  <dialog id="connectDialog"><div class="dialog-head"><div><span class="eyebrow">PAIR YOUR ROBOT</span><h2>连接机器人</h2></div><button class="close-dialog" aria-label="关闭">×</button></div><div class="connection-tabs"><button id="bleTab" class="selected">BLE 蓝牙</button><button id="serialTab">HC-05 / 串口</button></div><div id="bleContent"><p>连接提供 HM-10 UART 或 Nordic UART Service 的 <b>BLE 模块</b>。不适用于 HC-05。</p><div class="capability-line" id="bleCapability"></div><button id="pairBLE" class="button mint full-width">选择 BLE 机器人 ↗</button></div><div id="serialContent" hidden><p>先在系统蓝牙设置中配对 <b>HC-05</b>，再用支持 Web Serial 的浏览器选择对应串口。USB 串口仅供台架调试，比赛须使用无线控制。</p><label class="setting-row" for="baud">固件 UART 波特率<select id="baud"><option>9600</option><option>115200</option><option>38400</option><option>19200</option></select></label><div class="capability-line" id="serialCapability"></div><button id="pairSerial" class="button mint full-width">选择蓝牙 / USB 串口 ↗</button></div><div class="dialog-callout"><strong>需要配套固件</strong><p>按钮必须与机器人命令匹配。之前的 PWM-only 程序没有机械臂、夹爪及连接超时停止功能。</p><a href="./REC_BLE_Robot.ino" download="REC_BLE_Robot.ino">下载 Arduino 配套固件 ↓</a></div><button class="text-link" id="dialogDemo">暂不连接，进入界面演示 →</button></dialog>
+
+  <dialog id="settingsDialog"><div class="dialog-head"><div><span class="eyebrow">CONTROLLER SETUP</span><h2>设置与使用说明</h2></div><button class="close-dialog" aria-label="关闭">×</button></div><div class="settings-block"><h3>操作方向</h3><label class="setting-row">反转机械臂方向<input type="checkbox" id="reverseArm" role="switch"></label><label class="setting-row">反转夹爪方向<input type="checkbox" id="reverseGrip" role="switch"></label><p>空载时短按测试；角度范围和初始位置需在 Arduino 程序中按实际机构校准。</p></div><div class="settings-block"><h3>iPhone 使用</h3><p>Safari 可以打开本界面和演示模式，但原生不提供这里所需的 Web Bluetooth / Web Serial 连接。加入主屏幕不会改变蓝牙兼容性。实际遥控可使用兼容浏览器，或安装仓库中的原生 iPhone App，搭配 BLE UART 模块。</p><p>添加到主屏幕：Safari 底部或菜单中点「分享」→「添加到主屏幕」。</p></div><div class="settings-block"><h3>连接与引脚</h3><p>Nano / Uno + L298N：IN1 D2、IN2 D3、IN3 D4、IN4 D7；ENA D5、ENB D6；机械臂 D9、夹爪 D10。模块 TX→D0，模块 RX←D1（须匹配电平），全部共地。模块 UART 波特率须与固件一致，默认 9600。</p><p>配套固件使用 REC1 状态握手；握手成功才解锁操作。按住时每 120 ms 发送命令，固件在约 600 ms 无该执行器命令时停止其动作。软件急停保持舵机位置，不切断电源。</p><a href="./REC_BLE_Robot.ino" download>下载 Arduino 固件 ↓</a></div><div class="settings-block"><h3>Handbook 规则提醒</h3><p>全程尺寸不超过 20 × 20 × 20 cm；电池标称电压不超过 9 V；必须有实体电源切断开关；最多携带两块方块，不可在地面推拉。先完成己方目标放置才能进入 Center Zone。</p><p>三分钟比赛和一分钟校准计时仅是辅助；开始、结束和 Retry 以裁判指令为准。本界面不判断得分、方块数量或场地位置。</p></div><div class="settings-links"><a href="https://github.com/shenenleow10521/RemoteControl" target="_blank" rel="noopener">GitHub 项目 ↗</a><a href="https://github.com/shenenleow10521/RemoteControl/blob/main/INSTALL_IPHONE.md" target="_blank" rel="noopener">原生 iPhone App ↗</a></div></dialog>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>
