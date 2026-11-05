@@ -66,3 +66,7 @@ The main remote now sends B for Forward, F for Reverse, C for Grip Open, and E f
 ## Minimal interface in 1.0.2
 
 Main screen is landscape with direction/stop pad on the left and left/right clamp open/close buttons on the right. The prior arm servo channel (D9, W/X) is labelled Left Clamp; the prior gripper channel (D10, E/C) is labelled Right Clamp. Existing corrected drive and right-clamp directions remain in effect; independent direction switches persist in overflow settings. Physical wiring must match this channel assignment. Bluetooth connection is in the header, with settings/system pairing/raw terminal in the overflow menu. Speed controls, clock, demo and telemetry panels are removed from the main interface. Stop is momentary; if lifecycle safety has latched motion, the same center button shows Resume.
+
+## Joystick layout in 1.0.3
+
+Landscape gamepad: draggable joystick on the left, four clamp buttons on the right, Bluetooth in the header. Joystick release/cancellation returns to center and sends S. A central dead zone prevents unintended movement; hysteresis reduces rapid axis switching near diagonal angles. Existing Arduino firmware supports four directions, so diagonals choose the dominant axis and stick distance does not change PWM speed. The existing forward/reverse direction calibration is preserved. Physical Bluetooth and joystick behavior still need phone/robot testing.

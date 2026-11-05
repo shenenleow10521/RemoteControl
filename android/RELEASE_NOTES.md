@@ -1,3 +1,5 @@
+Version 1.0.3: landscape gamepad with a draggable left joystick, center dead zone and release-to-stop. Right side retains left/right clamp open/close buttons. Existing corrected drive and clamp directions remain in effect. Four-way F/B/L/R protocol; no proportional speed or diagonal commands are added to the Arduino firmware.
+
 Version 1.0.2: simplified landscape remote. Left: forward, reverse, left, right and stop. Right: left clamp open/close and right clamp open/close. Connection and overflow settings only; no speed, timer, telemetry or demo panels on the main screen. Existing corrected forward/reverse and right-clamp mappings are retained. Left clamp uses the prior D9/W-X servo channel; right clamp uses the D10/E-C channel. Confirm physical servo wiring.
 
 Version 1.0.1: corrected forward/reverse and gripper open/close button directions for this robot. Direction settings persist between app launches. Raw terminal text remains literal.

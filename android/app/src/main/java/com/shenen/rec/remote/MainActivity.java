@@ -48,6 +48,7 @@ public final class MainActivity extends Activity {
     private LinearLayout content;
     private TextView connectionTitle, connectionDetail;
     private Button connectButton, padStop;
+    private JoystickView joystick;
     private boolean connecting, destroyed, reverseArm, reverseGrip = true, reverseDrive = true;
     private AlertDialog activeDialog;
     private TextView terminalOutput;
@@ -116,14 +117,15 @@ public final class MainActivity extends Activity {
 
         LinearLayout controls=row(); controls.setGravity(Gravity.TOP);
         LinearLayout drive=panel();drive.setPadding(dp(12),dp(8),dp(12),dp(8));
-        drive.addView(label("行驶控制",14,TEXT,true));
-        LinearLayout first=row();first.addView(blank(),weight());first.addView(move("↑  前进",ControllerEngine.Group.DRIVE,'F'),weight());first.addView(blank(),weight());drive.addView(first);
-        LinearLayout middle=row();middle.addView(move("←  左转",ControllerEngine.Group.DRIVE,'L'),weight());
-        padStop=button("■  停止",Color.rgb(64,43,47),Color.rgb(255,180,170));padStop.setMinHeight(dp(56));
-        padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(false);});middle.addView(padStop,weight());
-        middle.addView(move("右转  →",ControllerEngine.Group.DRIVE,'R'),weight());drive.addView(middle);
-        LinearLayout last=row();last.addView(blank(),weight());last.addView(move("↓  后退",ControllerEngine.Group.DRIVE,'B'),weight());last.addView(blank(),weight());drive.addView(last);
-        drive.addView(label("按住移动 · 松开即停",10,MUTED,false));
+        drive.addView(label("行驶摇杆",14,TEXT,true));
+        joystick=new JoystickView(this,command->{
+            if(command=='S')engine.release(ControllerEngine.Group.DRIVE,"joystick");
+            else engine.start(ControllerEngine.Group.DRIVE,"joystick",ButtonMapping.map(command,reverseDrive,false,false));
+        });
+        drive.addView(joystick,new LinearLayout.LayoutParams(-1,dp(186)));
+        padStop=button("■  停止",Color.rgb(64,43,47),Color.rgb(255,180,170));
+        padStop.setOnClickListener(v->{joystick.cancelGesture();if(engine.locked)engine.resume();else engine.stop(false);});drive.addView(padStop);
+        drive.addView(label("拖动控制方向 · 松手回中停止",10,MUTED,false));
         LinearLayout.LayoutParams leftParams=new LinearLayout.LayoutParams(0,-2,1.15f);leftParams.setMargins(0,0,dp(10),0);controls.addView(drive,leftParams);
 
         LinearLayout clamps=panel();clamps.setPadding(dp(12),dp(8),dp(12),dp(8));
@@ -168,6 +170,7 @@ public final class MainActivity extends Activity {
         connectionDetail.setText(engine.locked?"动作已停止，点中间「恢复」继续":connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
         connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
+        if(joystick!=null){joystick.setEnabled(enabled);joystick.setAlpha(enabled?1f:.35f);}
         padStop.setEnabled(engine.ready);padStop.setAlpha(engine.ready?1f:.4f);
         padStop.setText(engine.locked?"▶  恢复":"■  停止");
         if(terminalSend!=null)terminalSend.setEnabled(connected);

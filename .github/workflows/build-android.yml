@@ -49,7 +49,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="android-v1.0.2-build.${GITHUB_RUN_NUMBER}"
+          tag="android-v1.0.3-build.${GITHUB_RUN_NUMBER}"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/RECRemote-Android.apk --clobber
           else
