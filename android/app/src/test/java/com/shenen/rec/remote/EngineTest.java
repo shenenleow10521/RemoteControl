@@ -18,8 +18,10 @@ public class EngineTest {
         org.junit.Assert.assertEquals('F',ButtonMapping.map('B',true,false,true));
         org.junit.Assert.assertEquals('C',ButtonMapping.map('E',true,false,true));
         org.junit.Assert.assertEquals('E',ButtonMapping.map('C',true,false,true));
-        for(char c:new char[]{'L','R','S','W','X','J','K','!'})
+        for(char c:new char[]{'S','W','X','J','K','!'})
             org.junit.Assert.assertEquals(c,ButtonMapping.map(c,true,false,true));
+        org.junit.Assert.assertEquals('R',ButtonMapping.map('L',true,false,true));
+        org.junit.Assert.assertEquals('L',ButtonMapping.map('R',true,false,true));
         org.junit.Assert.assertEquals('F',ButtonMapping.map('F',false,false,false));
         org.junit.Assert.assertEquals('E',ButtonMapping.map('E',false,false,false));
     }

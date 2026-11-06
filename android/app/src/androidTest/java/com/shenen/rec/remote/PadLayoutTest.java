@@ -25,7 +25,7 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                 assertTrue("App must be landscape",root.getWidth()>root.getHeight());
                 List<Button> buttons=new ArrayList<>();collect(root,buttons);
                 assertEquals("Eleven controls and Bluetooth connection",12,buttons.size());
-                String[] required={"前进","后退","左转","右转","停止","左夹子\n开","左夹子\n关","右夹子\n开","右夹子\n关"};
+                String[] required={"前进","后退","左转","右转","暂停","左夹子\n开","左夹子\n关","右夹子\n开","右夹子\n关"};
                 for(String name:required){
                     Button match=null;
                     for(Button button:buttons)if(button.getText().toString().contains(name)){match=button;break;}
@@ -47,6 +47,25 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                     assertEquals("Speed button must be round",match.getWidth(),match.getHeight());
                     assertTrue("Speed touch target too small",match.getHeight()/activity.getResources().getDisplayMetrics().density>=48);
                 }
+                try {
+                    java.lang.reflect.Field field=MainActivity.class.getDeclaredField("engine");field.setAccessible(true);
+                    ControllerEngine engine=(ControllerEngine)field.get(activity);engine.demo();
+                    Button pause=null,up=null,plus=null;
+                    for(Button b:buttons){
+                        if(b.getText().toString().contains("暂停"))pause=b;
+                        if(b.getText().toString().contains("前进"))up=b;
+                        if("加速".contentEquals(b.getContentDescription()==null?"":b.getContentDescription()))plus=b;
+                    }
+                    assertNotNull(pause);assertNotNull(up);assertNotNull(plus);
+                    java.lang.reflect.Field progressField=MainActivity.class.getDeclaredField("speedProgress");progressField.setAccessible(true);
+                    android.widget.ProgressBar bar=(android.widget.ProgressBar)progressField.get(activity);
+                    assertEquals(200,bar.getProgress());plus.performClick();assertEquals(220,bar.getProgress());
+                    engine.start(ControllerEngine.Group.DRIVE,"held",'F');pause.performClick();
+                    assertTrue(engine.locked);assertEquals(0,engine.heldCount());assertFalse(up.isEnabled());assertFalse(plus.isEnabled());
+                    assertTrue(pause.getText().toString().contains("继续"));
+                    pause.performClick();assertFalse(engine.locked);assertTrue(up.isEnabled());assertEquals(0,engine.heldCount());
+                    engine.disconnect();
+                } catch(ReflectiveOperationException e){throw new AssertionError(e);}
             });
             Bitmap screenshot=getInstrumentation().getUiAutomation().takeScreenshot();
             assertNotNull(screenshot);

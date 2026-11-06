@@ -93,9 +93,9 @@ public final class ClassicBluetooth {
             if (priority) queue.clear();
             else {
                 Iterator<Command> it = queue.iterator();
-                while (it.hasNext()) if (it.next().value.equals(c)) it.remove();
+                while (it.hasNext()) if (it.next().value.equals(c) && !c.equals("+") && !c.equals("-")) it.remove();
             }
-            if (queue.size() >= 8) return;
+            if (queue.size() >= 32) return;
             queue.add(new Command(c, priority));
             if (!draining) { draining = true; writer.execute(this::drain); }
         }
@@ -107,7 +107,8 @@ public final class ClassicBluetooth {
                         command = queue.poll();
                         if (command == null) { draining = false; return; }
                     }
-                    if (!command.priority && SystemClock.elapsedRealtime() - command.at > 240) continue;
+                    long ttl = command.value.equals("+") || command.value.equals("-") ? 1000 : 240;
+                    if (!command.priority && SystemClock.elapsedRealtime() - command.at > ttl) continue;
                     OutputStream out = output;
                     if (out == null) return;
                     out.write(command.value.getBytes(StandardCharsets.UTF_8)); out.flush();

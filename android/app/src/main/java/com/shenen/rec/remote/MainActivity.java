@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -47,7 +48,8 @@ public final class MainActivity extends Activity {
     private ControllerEngine engine;
     private ClassicBluetooth bluetooth;
     private LinearLayout content;
-    private TextView connectionTitle, connectionDetail;
+    private TextView connectionTitle, connectionDetail, speedLabel, speedFeedback;
+    private ProgressBar speedProgress;
     private Button connectButton, padStop, speedUp, speedDown;
     private boolean connecting, destroyed, reverseArm, reverseGrip = true, reverseDrive = true;
     private AlertDialog activeDialog;
@@ -101,9 +103,18 @@ public final class MainActivity extends Activity {
         content=column(); content.setPadding(dp(10),dp(6),dp(10),dp(6));
         outer.addView(content,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.6",14,MINT,true); status.addView(connectionTitle);
+        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.7",14,MINT,true); status.addView(connectionTitle);
         connectionDetail=label("",10,MUTED,false);status.addView(connectionDetail);
         header.addView(status,new LinearLayout.LayoutParams(0,-1,1));
+        LinearLayout speedPanel=column();speedPanel.setGravity(Gravity.CENTER_VERTICAL);
+        speedLabel=label("速度 · 等待反馈",11,MINT,true);speedLabel.setPadding(0,0,0,0);speedPanel.addView(speedLabel);
+        speedProgress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+        speedProgress.setMax(255);speedProgress.setProgressTintList(android.content.res.ColorStateList.valueOf(MINT));
+        speedProgress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(LINE));
+        speedPanel.addView(speedProgress,new LinearLayout.LayoutParams(-1,dp(8)));
+        speedFeedback=label("PWM 80–255",9,MUTED,false);speedFeedback.setPadding(0,0,0,0);speedPanel.addView(speedFeedback);
+        LinearLayout.LayoutParams speedParams=new LinearLayout.LayoutParams(dp(165),-1);
+        speedParams.setMargins(dp(6),0,dp(12),0);header.addView(speedPanel,speedParams);
         connectButton=button("连接蓝牙",MINT,INK);connectButton.setOnClickListener(v->{
             if(connecting||bluetooth.isConnected()||engine.mode==ControllerEngine.Mode.HANDSHAKE)disconnect();else showDevices();
         });
@@ -121,8 +132,8 @@ public final class MainActivity extends Activity {
             else if(r==2&&c==2)cell=speedControl(false);
             else if(r==2&&c==1)cell=move("↓\n后退",ControllerEngine.Group.DRIVE,'B');
             else if(r==1&&c==1){
-                padStop=button("■\n停止",Color.rgb(64,43,47),Color.rgb(255,180,170));
-                padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(false);});cell=padStop;
+                padStop=button("Ⅱ\n暂停",Color.rgb(64,43,47),Color.rgb(255,180,170));
+                padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(true);});cell=padStop;
             }else cell=blank();
             gridCell(pad,cell,r,c);
         }
@@ -150,7 +161,7 @@ public final class MainActivity extends Activity {
         b.setOnClickListener(v->engine.changeSpeed(faster));
         holder.addView(b,new LinearLayout.LayoutParams(dp(48),dp(48)));
         TextView caption=label(faster?"加速":"减速",10,MINT,false);
-        caption.setPadding(0,0,0,0);holder.addView(caption);
+        caption.setPadding(0,0,0,0);caption.setGravity(Gravity.CENTER);holder.addView(caption);
         if(faster)speedUp=b;else speedDown=b;
         return holder;
     }
@@ -193,13 +204,17 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.6 · 未连接");
-        connectionDetail.setText(engine.locked?"动作已停止，点中间「恢复」继续":connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
+        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.7 · 未连接");
+        connectionDetail.setText(engine.locked?(engine.stopConfirmed?"已暂停 · 机器人已反馈停止":"已锁定暂停 · 正在发送停止"):connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
         connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
-        for(Button b:new Button[]{speedUp,speedDown}){b.setEnabled(engine.ready);b.setAlpha(engine.ready?1f:.35f);}
+        for(Button b:new Button[]{speedUp,speedDown}){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
         padStop.setEnabled(engine.ready);padStop.setAlpha(engine.ready?1f:.4f);
-        padStop.setText(engine.locked?"▶  恢复":"■  停止");
+        padStop.setText(engine.locked?"▶  继续":"Ⅱ  暂停");
+        int displayed=engine.requestedSpeed>=0?engine.requestedSpeed:engine.speed;
+        speedProgress.setProgress(Math.max(0,displayed));
+        speedLabel.setText(displayed<0?"速度 · 等待反馈":"PWM "+displayed+"/255 · "+Math.round(displayed*100f/255)+"%");
+        speedFeedback.setText(!engine.ready?"连接后显示速度":engine.speedConfirmed?"机器人已反馈 · 非实测车速":displayed<0?"未收到速度反馈":"目标值 · 等待机器人确认");
         if(terminalSend!=null)terminalSend.setEnabled(connected);
         if(engine.ready)getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
