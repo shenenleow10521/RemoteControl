@@ -51,7 +51,7 @@ public final class MainActivity extends Activity {
     private TextView connectionTitle, connectionDetail, speedLabel, speedFeedback;
     private ProgressBar speedProgress;
     private Button connectButton, padStop, speedUp, speedDown;
-    private boolean connecting, destroyed, reverseArm, reverseGrip = true, reverseDrive = true;
+    private boolean connecting, destroyed, reverseArm = true, reverseGrip, reverseDrive = true;
     private AlertDialog activeDialog;
     private TextView terminalOutput;
     private Button terminalSend;
@@ -85,9 +85,16 @@ public final class MainActivity extends Activity {
             }
         });
         android.content.SharedPreferences prefs=getPreferences(MODE_PRIVATE);
+        // Flip both existing clamp directions once when upgrading from 1.0.8.
+        // Fresh installs inherit the corrected left=true / right=false mapping.
+        if(!prefs.getBoolean("clampDirectionsV108",false)){
+            prefs.edit().putBoolean("reverseArm",!prefs.getBoolean("reverseArm",false))
+                .putBoolean("reverseGrip",!prefs.getBoolean("reverseGrip",true))
+                .putBoolean("clampDirectionsV108",true).apply();
+        }
         reverseDrive=prefs.getBoolean("reverseDrive",true);
-        reverseGrip=prefs.getBoolean("reverseGrip",true);
-        reverseArm=prefs.getBoolean("reverseArm",false);
+        reverseGrip=prefs.getBoolean("reverseGrip",false);
+        reverseArm=prefs.getBoolean("reverseArm",true);
         buildUI(); render(); main.post(ticker);
     }
 
@@ -103,7 +110,7 @@ public final class MainActivity extends Activity {
         content=column(); content.setPadding(dp(10),dp(6),dp(10),dp(6));
         outer.addView(content,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.7",14,MINT,true); status.addView(connectionTitle);
+        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.8",14,MINT,true); status.addView(connectionTitle);
         connectionDetail=label("",10,MUTED,false);status.addView(connectionDetail);
         header.addView(status,new LinearLayout.LayoutParams(0,-1,1));
         LinearLayout speedPanel=column();speedPanel.setGravity(Gravity.CENTER_VERTICAL);
@@ -204,7 +211,7 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.7 · 未连接");
+        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.8 · 未连接");
         connectionDetail.setText(engine.locked?(engine.stopConfirmed?"已暂停 · 机器人已反馈停止":"已锁定暂停 · 正在发送停止"):connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
         connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
