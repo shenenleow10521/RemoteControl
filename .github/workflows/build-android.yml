@@ -50,10 +50,9 @@ jobs:
           script: |
             adb shell wm size 800x360
             adb shell wm density 160
-            cd android
-            gradle --no-daemon :app:connectedDebugAndroidTest
-            mkdir -p ../dist
-            adb pull /sdcard/Android/data/com.shenen.rec.pad.debug/files/layout-800x360.png ../dist/layout-800x360.png
+            gradle --project-dir android --no-daemon :app:connectedDebugAndroidTest
+            mkdir -p dist
+            adb pull /sdcard/Android/data/com.shenen.rec.pad.debug/files/layout-800x360.png dist/layout-800x360.png
       - name: Verify APK signing and metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
