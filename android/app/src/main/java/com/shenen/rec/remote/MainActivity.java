@@ -30,6 +30,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.GridLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -97,35 +98,51 @@ public final class MainActivity extends Activity {
             } else view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
             return insets;
         });
-        ScrollView scroll=new ScrollView(this); scroll.setFillViewport(true);
-        content=column(); content.setPadding(dp(14),dp(8),dp(14),dp(8)); scroll.addView(content);
-        outer.addView(scroll,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
-
+        content=column(); content.setPadding(dp(10),dp(6),dp(10),dp(6));
+        outer.addView(content,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC REMOTE PAD",16,MINT,true); status.addView(connectionTitle);
-        connectionDetail=label("",10,MUTED,false); status.addView(connectionDetail); header.addView(status,weight());
-        connectButton=button("连接蓝牙",MINT,INK); connectButton.setOnClickListener(v->{
-            if(connecting || bluetooth.isConnected() || engine.mode==ControllerEngine.Mode.HANDSHAKE) disconnect(); else showDevices();
-        }); header.addView(connectButton,new LinearLayout.LayoutParams(dp(112),dp(48)));
-        content.addView(header);space(content,8);
-
-        LinearLayout controls=row(); controls.setGravity(Gravity.TOP);
-        LinearLayout drive=panel();drive.setPadding(dp(12),dp(8),dp(12),dp(8));
-        LinearLayout first=row();first.addView(blank(),weight());first.addView(move("↑\n前进",ControllerEngine.Group.DRIVE,'F'),weight());first.addView(blank(),weight());drive.addView(first);
-        LinearLayout middle=row();middle.addView(move("←\n左转",ControllerEngine.Group.DRIVE,'L'),weight());
-        padStop=button("■\n停止",Color.rgb(64,43,47),Color.rgb(255,180,170));padStop.setMinHeight(dp(56));
-        padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(false);});middle.addView(padStop,weight());
-        middle.addView(move("→\n右转",ControllerEngine.Group.DRIVE,'R'),weight());drive.addView(middle);
-        LinearLayout last=row();last.addView(blank(),weight());last.addView(move("↓\n后退",ControllerEngine.Group.DRIVE,'B'),weight());last.addView(blank(),weight());drive.addView(last);
-        LinearLayout.LayoutParams leftParams=new LinearLayout.LayoutParams(0,-2,1.15f);leftParams.setMargins(0,0,dp(10),0);controls.addView(drive,leftParams);
-
-        LinearLayout clamps=panel();clamps.setPadding(dp(12),dp(8),dp(12),dp(8));
-        clamps.addView(label("左边夹子",14,TEXT,true));
-        LinearLayout leftClamp=row();leftClamp.addView(move("开",ControllerEngine.Group.ARM,'W'),weight());leftClamp.addView(move("关",ControllerEngine.Group.ARM,'X'),weight());clamps.addView(leftClamp);
-        space(clamps,8);clamps.addView(label("右边夹子",14,TEXT,true));
-        LinearLayout rightClamp=row();rightClamp.addView(move("开",ControllerEngine.Group.GRIP,'E'),weight());rightClamp.addView(move("关",ControllerEngine.Group.GRIP,'C'),weight());clamps.addView(rightClamp);
-        clamps.addView(label("按住微调 · 松开保持",10,MUTED,false));
-        controls.addView(clamps,new LinearLayout.LayoutParams(0,-2,1f));content.addView(controls);
+        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.5",14,MINT,true); status.addView(connectionTitle);
+        connectionDetail=label("",10,MUTED,false);status.addView(connectionDetail);
+        header.addView(status,new LinearLayout.LayoutParams(0,-1,1));
+        connectButton=button("连接蓝牙",MINT,INK);connectButton.setOnClickListener(v->{
+            if(connecting||bluetooth.isConnected()||engine.mode==ControllerEngine.Mode.HANDSHAKE)disconnect();else showDevices();
+        });
+        header.addView(connectButton,new LinearLayout.LayoutParams(dp(110),-1));
+        content.addView(header,new LinearLayout.LayoutParams(-1,dp(50)));space(content,4);
+        LinearLayout controls=row();controls.setGravity(Gravity.FILL);
+        LinearLayout drive=panel();drive.setPadding(dp(4),dp(4),dp(4),dp(4));
+        GridLayout pad=new GridLayout(this);pad.setColumnCount(3);pad.setRowCount(3);pad.setUseDefaultMargins(false);
+        for(int r=0;r<3;r++)for(int c=0;c<3;c++){
+            View cell;
+            if(r==0&&c==1)cell=move("↑\n前进",ControllerEngine.Group.DRIVE,'F');
+            else if(r==1&&c==0)cell=move("←\n左转",ControllerEngine.Group.DRIVE,'L');
+            else if(r==1&&c==2)cell=move("→\n右转",ControllerEngine.Group.DRIVE,'R');
+            else if(r==2&&c==1)cell=move("↓\n后退",ControllerEngine.Group.DRIVE,'B');
+            else if(r==1&&c==1){
+                padStop=button("■\n停止",Color.rgb(64,43,47),Color.rgb(255,180,170));
+                padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(false);});cell=padStop;
+            }else cell=blank();
+            gridCell(pad,cell,r,c);
+        }
+        drive.addView(pad,new LinearLayout.LayoutParams(-1,-1));
+        LinearLayout.LayoutParams left=new LinearLayout.LayoutParams(0,-1,1.15f);left.setMargins(0,0,dp(8),0);controls.addView(drive,left);
+        LinearLayout clamps=panel();clamps.setPadding(dp(4),dp(4),dp(4),dp(4));
+        GridLayout gripGrid=new GridLayout(this);gripGrid.setColumnCount(2);gripGrid.setRowCount(2);
+        gridCell(gripGrid,move("左夹子\n开",ControllerEngine.Group.ARM,'W'),0,0);
+        gridCell(gripGrid,move("左夹子\n关",ControllerEngine.Group.ARM,'X'),0,1);
+        gridCell(gripGrid,move("右夹子\n开",ControllerEngine.Group.GRIP,'E'),1,0);
+        gridCell(gripGrid,move("右夹子\n关",ControllerEngine.Group.GRIP,'C'),1,1);
+        clamps.addView(gripGrid,new LinearLayout.LayoutParams(-1,-1));
+        controls.addView(clamps,new LinearLayout.LayoutParams(0,-1,1));
+        content.addView(controls,new LinearLayout.LayoutParams(-1,0,1));
+    }
+    private void gridCell(GridLayout grid,View cell,int row,int column){
+        if(cell instanceof Button){
+            Button b=(Button)cell;b.setMinHeight(0);b.setMinimumHeight(0);b.setMinWidth(0);b.setMinimumWidth(0);
+            b.setTextSize(14);b.setPadding(dp(3),dp(2),dp(3),dp(2));b.setGravity(Gravity.CENTER);
+        }
+        GridLayout.LayoutParams p=new GridLayout.LayoutParams(GridLayout.spec(row,1f),GridLayout.spec(column,1f));
+        p.width=0;p.height=0;p.setGravity(Gravity.FILL);p.setMargins(dp(3),dp(3),dp(3),dp(3));grid.addView(cell,p);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -157,7 +174,7 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC REMOTE PAD · 未连接");
+        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.5 · 未连接");
         connectionDetail.setText(engine.locked?"动作已停止，点中间「恢复」继续":connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
         connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}

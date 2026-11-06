@@ -37,16 +37,33 @@ jobs:
       - name: Test and build native Android app
         working-directory: android
         run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
+      - name: Enable emulator hardware acceleration
+        run: sudo chmod 666 /dev/kvm
+      - name: Verify every control fits on a small landscape screen
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: |
+            adb shell wm size 800x360
+            adb shell wm density 160
+            cd android
+            gradle --no-daemon :app:connectedDebugAndroidTest
+            mkdir -p ../dist
+            adb pull /sdcard/Android/data/com.shenen.rec.pad.debug/files/layout-800x360.png ../dist/layout-800x360.png
       - name: Verify APK signing and metadata
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RECRemote-Pad-v1.0.4.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RECRemote-Pad-v1.0.5.apk
       - uses: actions/upload-artifact@v4
         with:
           name: RECRemote-Android-APK
-          path: dist/RECRemote-Pad-v1.0.4.apk
+          path: dist/RECRemote-Pad-v1.0.5.apk
           if-no-files-found: error
           retention-days: 30
       - name: Publish public Android download
@@ -54,12 +71,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="android-v1.0.4-build.${GITHUB_RUN_NUMBER}"
+          tag="android-v1.0.5-build.${GITHUB_RUN_NUMBER}"
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/RECRemote-Pad-v1.0.4.apk --clobber
+            gh release upload "$tag" dist/RECRemote-Pad-v1.0.5.apk --clobber
           else
-            gh release create "$tag" dist/RECRemote-Pad-v1.0.4.apk --target "$GITHUB_SHA" --title 'REC Remote for Android — Development APK' --notes-file android/RELEASE_NOTES.md
+            gh release create "$tag" dist/RECRemote-Pad-v1.0.5.apk --target "$GITHUB_SHA" --title 'REC Remote for Android — Development APK' --notes-file android/RELEASE_NOTES.md
           fi
+      - name: Save verified layout screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RECRemote-Pad-layout
+          path: dist/layout-800x360.png
+          if-no-files-found: ignore
       - name: Save test report
         if: always()
         uses: actions/upload-artifact@v4
