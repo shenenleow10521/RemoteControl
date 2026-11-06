@@ -110,8 +110,9 @@ public final class MainActivity extends Activity {
         content=column(); content.setPadding(dp(10),dp(6),dp(10),dp(6));
         outer.addView(content,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.9",14,MINT,true); status.addView(connectionTitle);
+        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.10",14,MINT,true); status.addView(connectionTitle);
         connectionDetail=label("",10,MUTED,false);status.addView(connectionDetail);
+        connectionTitle.setOnLongClickListener(v->{showDiagnostics();return true;});
         header.addView(status,new LinearLayout.LayoutParams(0,-1,1));
         LinearLayout speedPanel=column();speedPanel.setGravity(Gravity.CENTER_VERTICAL);
         speedLabel=label("Speed · No feedback",11,MINT,true);speedLabel.setPadding(0,0,0,0);speedPanel.addView(speedLabel);
@@ -140,7 +141,7 @@ public final class MainActivity extends Activity {
             else if(r==2&&c==1)cell=move("↓\nReverse",ControllerEngine.Group.DRIVE,'B');
             else if(r==1&&c==1){
                 padStop=button("Ⅱ\nPause",Color.rgb(64,43,47),Color.rgb(255,180,170));
-                padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(true);});cell=padStop;
+                installPauseHandler();cell=padStop;
             }else cell=blank();
             gridCell(pad,cell,r,c);
         }
@@ -155,6 +156,31 @@ public final class MainActivity extends Activity {
         clamps.addView(gripGrid,new LinearLayout.LayoutParams(-1,-1));
         controls.addView(clamps,new LinearLayout.LayoutParams(0,-1,1));
         content.addView(controls,new LinearLayout.LayoutParams(-1,0,1));
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void installPauseHandler() {
+        padStop.setOnClickListener(v->togglePause());
+        padStop.setOnTouchListener((view,event)->{
+            if(!view.isEnabled())return false;
+            if(event.getActionMasked()==MotionEvent.ACTION_DOWN){
+                view.setPressed(true);togglePause();
+            }else if(event.getActionMasked()==MotionEvent.ACTION_UP || event.getActionMasked()==MotionEvent.ACTION_CANCEL){
+                view.setPressed(false);
+            }
+            return true;
+        });
+    }
+    private void togglePause() {
+        if(!engine.ready)return;
+        if(engine.locked)engine.resume();else engine.stop(true);
+    }
+    private void showDiagnostics() {
+        TextView text=label(bluetooth.diagnostics()+"\n\nReceived from robot:\n"+(terminalLog.length()==0?"No received data":terminalLog.toString()),11,TEXT,false);
+        text.setTextIsSelectable(true);text.setTypeface(Typeface.MONOSPACE);text.setPadding(dp(16),dp(12),dp(16),dp(12));
+        ScrollView scroll=new ScrollView(this);scroll.addView(text);
+        activeDialog=new AlertDialog.Builder(this).setTitle("Bluetooth diagnostics").setView(scroll).setPositiveButton("Close",null).create();
+        activeDialog.show();
     }
 
     private View speedControl(boolean faster) {
@@ -211,8 +237,8 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"Connecting…":connected?engine.name:"REC PAD 1.0.9 · Disconnected");
-        connectionDetail.setText(engine.locked?(engine.stopConfirmed?"Paused · Stop confirmed":"Paused · Sending stop"):connected?"Hold to move · Release to stop":"Pair HC-05 in Bluetooth settings");
+        connectionTitle.setText(connecting?"Connecting…":connected?engine.name:"REC PAD 1.0.10 · Disconnected");
+        connectionDetail.setText(engine.locked?(engine.stopConfirmed?"Paused · Firmware reports STOPPED":"Paused · Sending stop"):connected?"Hold to move · Release to stop":"Pair HC-05 in Bluetooth settings");
         connectButton.setText(connecting||connected?"Disconnect":"Connect BT");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
         for(Button b:new Button[]{speedUp,speedDown}){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
@@ -267,7 +293,7 @@ public final class MainActivity extends Activity {
         CheckBox drive=new CheckBox(this); drive.setText("Reverse forward / reverse"); drive.setChecked(reverseDrive); drive.setTextColor(TEXT); drive.setOnCheckedChangeListener((v,c)->{reverseDrive=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseDrive",c).apply();}); settings.addView(drive);
         CheckBox arm=new CheckBox(this); arm.setText("Reverse left clamp open / close"); arm.setChecked(reverseArm); arm.setTextColor(TEXT); arm.setOnCheckedChangeListener((v,c)->{reverseArm=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseArm",c).apply();}); settings.addView(arm);
         CheckBox grip=new CheckBox(this); grip.setText("Reverse right clamp open / close"); grip.setChecked(reverseGrip); grip.setTextColor(TEXT); grip.setOnCheckedChangeListener((v,c)->{reverseGrip=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseGrip",c).apply();}); settings.addView(grip);
-        settings.addView(label("Bluetooth Classic / SPP for HC-05 / HC-06; pair in system settings before connecting. Only one terminal can connect at a time.\n\nThe terminal does not require REC1. Available actions depend on the Arduino sketch.\n\nNano / Uno + L298N\nIN1 D2 · IN2 D3 · IN3 D4 · IN4 D7\nENA D5 · ENB D6 · Left clamp D9 · Right clamp D10\n\nHC-05 TX to D0; match voltage levels from D1 to HC-05 RX. Use a common ground. Disconnect D0 / D1 module wires before uploading.\n\nREC_BLE_Robot firmware supports all controls and actuator timeouts. Its UART_BAUD defaults to 9600 and must match the module. The app does not configure UART baud.\n\nHeld actions repeat every 120 ms. Release sends S for wheels; pause sends S! and locks controls until Resume. Companion firmware stops each actuator after about 600 ms without its motion command. Legacy firmware may not stop on disconnection. The app disconnects in the background. Software stop does not cut power.\n\nCalibrate directions and angles with the mechanism unloaded. Servos may move on power-up.\n\nHandbook: maximum size 20 × 20 × 20 cm; nominal battery voltage at most 9 V; physical power switch required; carry at most two blocks and do not push or drag blocks on the ground. Complete your own target placement before entering the Center Zone. Follow referee instructions for start, finish, and Retry.",12,MUTED,false));
+        settings.addView(label("Bluetooth Classic / SPP for HC-05 / HC-06; pair in system settings before connecting. Only one terminal can connect at a time.\n\nThe terminal does not require REC1. Available actions depend on the Arduino sketch.\n\nNano / Uno + L298N\nIN1 D2 · IN2 D3 · IN3 D4 · IN4 D7\nENA D5 · ENB D6 · Left clamp D9 · Right clamp D10\n\nHC-05 TX to D0; match voltage levels from D1 to HC-05 RX. Use a common ground. Disconnect D0 / D1 module wires before uploading.\n\nREC_BLE_Robot firmware supports all controls and actuator timeouts. Its UART_BAUD defaults to 9600 and must match the module. The app does not configure UART baud.\n\nHeld actions repeat every 120 ms. Release sends S for wheels; pause sends separate S and ! lines and locks controls until Resume. Companion firmware stops each actuator after about 600 ms without its motion command. Legacy firmware may not stop on disconnection. The app disconnects in the background. Software stop does not cut power.\n\nCalibrate directions and angles with the mechanism unloaded. Servos may move on power-up.\n\nHandbook: maximum size 20 × 20 × 20 cm; nominal battery voltage at most 9 V; physical power switch required; carry at most two blocks and do not push or drag blocks on the ground. Complete your own target placement before entering the Center Zone. Follow referee instructions for start, finish, and Retry.",12,MUTED,false));
         ScrollView scroll=new ScrollView(this); scroll.addView(settings);
         activeDialog=new AlertDialog.Builder(this).setTitle("Settings and connection help").setView(scroll).setPositiveButton("Done",null)
             .setNeutralButton("Firmware and setup guide",(d,w)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/shenenleow10521/RemoteControl/blob/main/android/README.md")))).create(); activeDialog.show();
@@ -328,8 +354,8 @@ public final class MainActivity extends Activity {
     }
     private void notice(String text) { Toast.makeText(this,text,Toast.LENGTH_LONG).show(); }
     private int dp(int n) { return Math.round(n*getResources().getDisplayMetrics().density); }
-    private LinearLayout column() { LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.VERTICAL);return v; }
-    private LinearLayout row() { LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.HORIZONTAL);v.setGravity(Gravity.CENTER_VERTICAL);return v; }
+    private LinearLayout column() { LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.VERTICAL);v.setMotionEventSplittingEnabled(true);return v; }
+    private LinearLayout row() { LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.HORIZONTAL);v.setMotionEventSplittingEnabled(true);v.setGravity(Gravity.CENTER_VERTICAL);return v; }
     private View blank() { return new View(this); }
     private LinearLayout.LayoutParams weight() { LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);p.setMargins(dp(3),dp(4),dp(3),dp(4));return p; }
     private void space(LinearLayout parent,int height) { View v=new View(this);parent.addView(v,new LinearLayout.LayoutParams(1,dp(height))); }

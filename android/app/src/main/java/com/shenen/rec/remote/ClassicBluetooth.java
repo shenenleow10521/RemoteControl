@@ -28,10 +28,12 @@ public final class ClassicBluetooth {
     private final Handler main;
     private final Listener listener;
     private Session current;
+    private volatile String lastWrite = "No completed write yet";
+    public String diagnostics() { return "Bluetooth: " + (isConnected()?"connected":"disconnected") + "\nLast completed write: " + lastWrite; }
     public ClassicBluetooth(Handler main, Listener listener) { this.main = main; this.listener = listener; }
 
     public void connect(BluetoothDevice device) {
-        disconnect();
+        disconnect(); lastWrite = "No completed write yet";
         Session session = new Session(device); current = session;
         Thread thread = new Thread(() -> {
             try {
@@ -83,7 +85,7 @@ public final class ClassicBluetooth {
         @Override public synchronized void send(char c, boolean priority) {
             sendText(String.valueOf(c), priority);
         }
-        @Override public void stopAll() { sendText("S!", true); }
+        @Override public void stopAll() { sendText(StopCommand.FRAME, true); }
         synchronized void sendText(String text, boolean priority) {
             if (closing || output == null || closeScheduled) return;
             if (text.length() > 512) return;
@@ -112,6 +114,7 @@ public final class ClassicBluetooth {
                     OutputStream out = output;
                     if (out == null) return;
                     out.write(command.value.getBytes(StandardCharsets.UTF_8)); out.flush();
+                    lastWrite = command.value.replace("\r","<CR>").replace("\n","<LF>");
                 }
             } catch (Exception error) { fail(error); }
             finally { synchronized (this) { draining = false; } }
@@ -146,7 +149,7 @@ public final class ClassicBluetooth {
         @Override public synchronized void close() {
             if (closing || closeScheduled) return;
             closeScheduled = true; queue.clear();
-            if (output != null) enqueue("S!", true);
+            if (output != null) enqueue(StopCommand.FRAME, true);
             // Socket close cancels blocked connect/read/write, even if stop delivery fails.
             main.postDelayed(this::forceClose, 250);
         }

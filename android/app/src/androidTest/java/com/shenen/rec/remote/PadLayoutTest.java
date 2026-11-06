@@ -60,9 +60,15 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                     java.lang.reflect.Field progressField=MainActivity.class.getDeclaredField("speedProgress");progressField.setAccessible(true);
                     android.widget.ProgressBar bar=(android.widget.ProgressBar)progressField.get(activity);
                     assertEquals(200,bar.getProgress());plus.performClick();assertEquals(220,bar.getProgress());
-                    engine.start(ControllerEngine.Group.DRIVE,"held",'F');pause.performClick();
+                    engine.start(ControllerEngine.Group.DRIVE,"held",'F');
+                    long now=android.os.SystemClock.uptimeMillis();
+                    android.view.MotionEvent down=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,10,10,0);
+                    pause.dispatchTouchEvent(down);down.recycle();
                     assertTrue(engine.locked);assertEquals(0,engine.heldCount());assertFalse(up.isEnabled());assertFalse(plus.isEnabled());
                     assertTrue(pause.getText().toString().contains("Resume"));
+                    android.view.MotionEvent upEvent=android.view.MotionEvent.obtain(now,now+20,android.view.MotionEvent.ACTION_UP,10,10,0);
+                    pause.dispatchTouchEvent(upEvent);upEvent.recycle();
+                    assertTrue("Releasing Pause must not resume",engine.locked);
                     pause.performClick();assertFalse(engine.locked);assertTrue(up.isEnabled());assertEquals(0,engine.heldCount());
                     engine.disconnect();
                 } catch(ReflectiveOperationException e){throw new AssertionError(e);}
