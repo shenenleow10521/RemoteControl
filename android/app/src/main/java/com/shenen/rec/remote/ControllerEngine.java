@@ -31,7 +31,7 @@ public final class ControllerEngine {
     public Mode mode = Mode.IDLE;
     public boolean ready, locked;
     public int speed = -1, arm = -1, grip = -1;
-    public String drive = "IDLE", feedback = "等待连接机器人", name = "", lastCommand = "—";
+    public String drive = "IDLE", feedback = "Waiting for robot connection", name = "", lastCommand = "—";
 
     public ControllerEngine(Clock clock, Listener listener) {
         this.clock = clock; this.listener = listener; lastTick = clock.now();
@@ -41,7 +41,7 @@ public final class ControllerEngine {
         held.clear(); this.sink = sink; this.name = name;
         mode = Mode.HANDSHAKE; ready = false; locked = false;
         speed = arm = grip = -1; requestedSpeed = -1; speedConfirmed = stopConfirmed = false; drive = "IDLE";
-        lastFeedback = lastTick = clock.now(); feedback = "蓝牙已连接，等待配套固件 REC1 握手…";
+        lastFeedback = lastTick = clock.now(); feedback = "Bluetooth connected. Waiting for REC1 firmware handshake…";
         send('!', true); send('P', false); listener.changed();
     }
     /** Raw SPP mode works with existing sketches and requires no REC1 handshake. */
@@ -51,14 +51,14 @@ public final class ControllerEngine {
         mode = Mode.TERMINAL; ready = true; locked = false;
         speed = arm = grip = -1; requestedSpeed = -1; speedConfirmed = stopConfirmed = false; drive = "IDLE";
         lastFeedback = lastTick = clock.now(); lastCommand = "—";
-        feedback = "蓝牙串口已连接。透传模式，按 Arduino 现有程序执行指令。";
+        feedback = "Bluetooth serial connected. Commands follow the current Arduino sketch.";
         send('P', false); listener.changed();
     }
     public void demo() {
         disconnect();
         mode = Mode.DEMO; ready = true; locked = false;
-        name = "演示模式 · 未连接机器人"; speed = requestedSpeed = 200; speedConfirmed = true; arm = grip = 90; drive = "STOPPED";
-        lastTick = clock.now(); feedback = "演示数据；不会发送到任何机器人。"; listener.changed();
+        name = "Demo mode · No robot connected"; speed = requestedSpeed = 200; speedConfirmed = true; arm = grip = 90; drive = "STOPPED";
+        lastTick = clock.now(); feedback = "Demo data; no commands are sent to a robot."; listener.changed();
     }
     public boolean start(Group group, String owner, char command) {
         if (!ready || locked || !valid(group, command)) return false;
@@ -112,10 +112,10 @@ public final class ControllerEngine {
     public void tick() {
         long now = clock.now(), delta = now - lastTick; lastTick = now;
         if (delta > 400 && !held.isEmpty()) {
-            stop(true); listener.notice("操作被打断，已停止。请松开按钮并恢复操作。"); return;
+            stop(true); listener.notice("Control interrupted. Release the buttons and tap Resume."); return;
         }
         if (sink != null && mode != Mode.TERMINAL && now - lastFeedback > (ready ? 3000 : 10000)) {
-            disconnect(); listener.notice("固件反馈超时。检查配套程序、模块波特率和 TX/RX 接线。"); return;
+            disconnect(); listener.notice("Firmware feedback timed out. Check the sketch, module baud rate, and TX/RX wiring."); return;
         }
         if (ready && locked && sink != null && now - lastStop >= 240) {
             sink.stopAll(); lastCommand = "S!"; lastStop = now;
@@ -128,7 +128,7 @@ public final class ControllerEngine {
     public void disconnect() {
         stop(false); Sink previous = sink; sink = null; held.clear();
         mode = Mode.IDLE; ready = locked = false; speed = arm = grip = requestedSpeed = -1; speedConfirmed = stopConfirmed = false;
-        drive = "IDLE"; name = ""; feedback = "连接已断开"; lastCommand = "—";
+        drive = "IDLE"; name = ""; feedback = "Disconnected"; lastCommand = "—";
         if (previous != null) previous.close(); listener.changed();
     }
     private static boolean valid(Group group, char c) {
@@ -144,8 +144,8 @@ public final class ControllerEngine {
             if (c == 'X') arm = clamp(arm - 5, 0, 155);
             if (c == 'E') grip = clamp(grip + 5, 30, 150);
             if (c == 'C') grip = clamp(grip - 5, 30, 150);
-            feedback = "演示 · PWM=" + speed + " ARM=" + arm + " GRIP=" + grip + " · 非真实反馈";
-            lastCommand = "[演示] " + c;
+            feedback = "Demo · PWM=" + speed + " ARM=" + arm + " GRIP=" + grip + " · Simulated feedback";
+            lastCommand = "[Demo] " + c;
         } else if (sink != null) { sink.send(c, priority); lastCommand = String.valueOf(c); }
     }
     private static int clamp(int value, int low, int high) { return Math.max(low, Math.min(high, value)); }

@@ -51,7 +51,7 @@ public final class ClassicBluetooth {
         main.postDelayed(() -> {
             if (current == session && !session.connected && !session.closing) {
                 current = null; session.forceClose();
-                listener.failed("蓝牙连接超时。确认模块已配对、通电，且没有被另一部手机占用。");
+                listener.failed("Bluetooth connection timed out. Check pairing, power, and that no other phone is connected.");
             }
         }, 12000);
     }
@@ -121,7 +121,7 @@ public final class ClassicBluetooth {
             char[] characters = new char[128]; StringBuilder text = new StringBuilder();
             while (!closing) {
                 int count = reader.read(characters);
-                if (count < 0) throw new java.io.IOException("蓝牙连接已断开");
+                if (count < 0) throw new java.io.IOException("Bluetooth disconnected");
                 String chunk = new String(characters, 0, count);
                 main.post(() -> { if (current == this && !closing) listener.chunk(chunk); });
                 text.append(chunk);
@@ -139,7 +139,7 @@ public final class ClassicBluetooth {
             main.post(() -> {
                 if (current == this) {
                     current = null;
-                    listener.failed(error.getMessage() == null ? "蓝牙连接失败" : error.getMessage());
+                    listener.failed(error.getMessage() == null ? "Bluetooth connection failed" : error.getMessage());
                 }
             });
         }

@@ -81,7 +81,7 @@ public final class MainActivity extends Activity {
             public void chunk(String text) { if (!destroyed) appendLog(text); }
             public void failed(String reason) {
                 if (destroyed) return;
-                connecting = false; engine.disconnect(); notice("连接中断：" + reason); render();
+                connecting = false; engine.disconnect(); notice("Connection lost: " + reason); render();
             }
         });
         android.content.SharedPreferences prefs=getPreferences(MODE_PRIVATE);
@@ -110,11 +110,11 @@ public final class MainActivity extends Activity {
         content=column(); content.setPadding(dp(10),dp(6),dp(10),dp(6));
         outer.addView(content,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.8",14,MINT,true); status.addView(connectionTitle);
+        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.9",14,MINT,true); status.addView(connectionTitle);
         connectionDetail=label("",10,MUTED,false);status.addView(connectionDetail);
         header.addView(status,new LinearLayout.LayoutParams(0,-1,1));
         LinearLayout speedPanel=column();speedPanel.setGravity(Gravity.CENTER_VERTICAL);
-        speedLabel=label("速度 · 等待反馈",11,MINT,true);speedLabel.setPadding(0,0,0,0);speedPanel.addView(speedLabel);
+        speedLabel=label("Speed · No feedback",11,MINT,true);speedLabel.setPadding(0,0,0,0);speedPanel.addView(speedLabel);
         speedProgress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
         speedProgress.setMax(255);speedProgress.setProgressTintList(android.content.res.ColorStateList.valueOf(MINT));
         speedProgress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(LINE));
@@ -122,7 +122,7 @@ public final class MainActivity extends Activity {
         speedFeedback=label("PWM 80–255",9,MUTED,false);speedFeedback.setPadding(0,0,0,0);speedPanel.addView(speedFeedback);
         LinearLayout.LayoutParams speedParams=new LinearLayout.LayoutParams(dp(165),-1);
         speedParams.setMargins(dp(6),0,dp(12),0);header.addView(speedPanel,speedParams);
-        connectButton=button("连接蓝牙",MINT,INK);connectButton.setOnClickListener(v->{
+        connectButton=button("Connect BT",MINT,INK);connectButton.setOnClickListener(v->{
             if(connecting||bluetooth.isConnected()||engine.mode==ControllerEngine.Mode.HANDSHAKE)disconnect();else showDevices();
         });
         header.addView(connectButton,new LinearLayout.LayoutParams(dp(110),-1));
@@ -132,14 +132,14 @@ public final class MainActivity extends Activity {
         GridLayout pad=new GridLayout(this);pad.setColumnCount(3);pad.setRowCount(3);pad.setUseDefaultMargins(false);
         for(int r=0;r<3;r++)for(int c=0;c<3;c++){
             View cell;
-            if(r==0&&c==1)cell=move("↑\n前进",ControllerEngine.Group.DRIVE,'F');
-            else if(r==1&&c==0)cell=move("←\n左转",ControllerEngine.Group.DRIVE,'L');
-            else if(r==1&&c==2)cell=move("→\n右转",ControllerEngine.Group.DRIVE,'R');
+            if(r==0&&c==1)cell=move("↑\nForward",ControllerEngine.Group.DRIVE,'F');
+            else if(r==1&&c==0)cell=move("←\nLeft",ControllerEngine.Group.DRIVE,'L');
+            else if(r==1&&c==2)cell=move("→\nRight",ControllerEngine.Group.DRIVE,'R');
             else if(r==2&&c==0)cell=speedControl(true);
             else if(r==2&&c==2)cell=speedControl(false);
-            else if(r==2&&c==1)cell=move("↓\n后退",ControllerEngine.Group.DRIVE,'B');
+            else if(r==2&&c==1)cell=move("↓\nReverse",ControllerEngine.Group.DRIVE,'B');
             else if(r==1&&c==1){
-                padStop=button("Ⅱ\n暂停",Color.rgb(64,43,47),Color.rgb(255,180,170));
+                padStop=button("Ⅱ\nPause",Color.rgb(64,43,47),Color.rgb(255,180,170));
                 padStop.setOnClickListener(v->{if(engine.locked)engine.resume();else engine.stop(true);});cell=padStop;
             }else cell=blank();
             gridCell(pad,cell,r,c);
@@ -148,10 +148,10 @@ public final class MainActivity extends Activity {
         LinearLayout.LayoutParams left=new LinearLayout.LayoutParams(0,-1,1.15f);left.setMargins(0,0,dp(8),0);controls.addView(drive,left);
         LinearLayout clamps=panel();clamps.setPadding(dp(4),dp(4),dp(4),dp(4));
         GridLayout gripGrid=new GridLayout(this);gripGrid.setColumnCount(2);gripGrid.setRowCount(2);
-        gridCell(gripGrid,move("左夹子\n开",ControllerEngine.Group.ARM,'W'),0,0);
-        gridCell(gripGrid,move("左夹子\n关",ControllerEngine.Group.ARM,'X'),0,1);
-        gridCell(gripGrid,move("右夹子\n开",ControllerEngine.Group.GRIP,'E'),1,0);
-        gridCell(gripGrid,move("右夹子\n关",ControllerEngine.Group.GRIP,'C'),1,1);
+        gridCell(gripGrid,move("Left clamp\nOpen",ControllerEngine.Group.ARM,'W'),0,0);
+        gridCell(gripGrid,move("Left clamp\nClose",ControllerEngine.Group.ARM,'X'),0,1);
+        gridCell(gripGrid,move("Right clamp\nOpen",ControllerEngine.Group.GRIP,'E'),1,0);
+        gridCell(gripGrid,move("Right clamp\nClose",ControllerEngine.Group.GRIP,'C'),1,1);
         clamps.addView(gripGrid,new LinearLayout.LayoutParams(-1,-1));
         controls.addView(clamps,new LinearLayout.LayoutParams(0,-1,1));
         content.addView(controls,new LinearLayout.LayoutParams(-1,0,1));
@@ -160,14 +160,14 @@ public final class MainActivity extends Activity {
     private View speedControl(boolean faster) {
         LinearLayout holder=column();holder.setGravity(Gravity.CENTER);
         Button b=button(faster?"＋":"−",MINT,INK);
-        b.setContentDescription(faster?"加速":"减速");
+        b.setContentDescription(faster?"Speed up":"Speed down");
         b.setMinWidth(0);b.setMinimumWidth(0);b.setMinHeight(0);b.setMinimumHeight(0);
         b.setPadding(0,0,0,0);b.setTextSize(24);b.setGravity(Gravity.CENTER);
         GradientDrawable circle=new GradientDrawable();circle.setShape(GradientDrawable.OVAL);circle.setColor(MINT);
         b.setBackground(circle);
         b.setOnClickListener(v->engine.changeSpeed(faster));
         holder.addView(b,new LinearLayout.LayoutParams(dp(48),dp(48)));
-        TextView caption=label(faster?"加速":"减速",10,MINT,false);
+        TextView caption=label(faster?"Speed up":"Speed down",10,MINT,false);
         caption.setPadding(0,0,0,0);caption.setGravity(Gravity.CENTER);holder.addView(caption);
         if(faster)speedUp=b;else speedDown=b;
         return holder;
@@ -211,24 +211,24 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.8 · 未连接");
-        connectionDetail.setText(engine.locked?(engine.stopConfirmed?"已暂停 · 机器人已反馈停止":"已锁定暂停 · 正在发送停止"):connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
-        connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
+        connectionTitle.setText(connecting?"Connecting…":connected?engine.name:"REC PAD 1.0.9 · Disconnected");
+        connectionDetail.setText(engine.locked?(engine.stopConfirmed?"Paused · Stop confirmed":"Paused · Sending stop"):connected?"Hold to move · Release to stop":"Pair HC-05 in Bluetooth settings");
+        connectButton.setText(connecting||connected?"Disconnect":"Connect BT");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
         for(Button b:new Button[]{speedUp,speedDown}){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
         padStop.setEnabled(engine.ready);padStop.setAlpha(engine.ready?1f:.4f);
-        padStop.setText(engine.locked?"▶  继续":"Ⅱ  暂停");
+        padStop.setText(engine.locked?"▶  Resume":"Ⅱ  Pause");
         int displayed=engine.requestedSpeed>=0?engine.requestedSpeed:engine.speed;
         speedProgress.setProgress(Math.max(0,displayed));
-        speedLabel.setText(displayed<0?"速度 · 等待反馈":"PWM "+displayed+"/255 · "+Math.round(displayed*100f/255)+"%");
-        speedFeedback.setText(!engine.ready?"连接后显示速度":engine.speedConfirmed?"机器人已反馈 · 非实测车速":displayed<0?"未收到速度反馈":"目标值 · 等待机器人确认");
+        speedLabel.setText(displayed<0?"Speed · No feedback":"PWM "+displayed+"/255 · "+Math.round(displayed*100f/255)+"%");
+        speedFeedback.setText(!engine.ready?"Connect to read speed":engine.speedConfirmed?"Confirmed PWM · not road speed":displayed<0?"No speed feedback received":"Target PWM · Awaiting confirmation");
         if(terminalSend!=null)terminalSend.setEnabled(connected);
         if(engine.ready)getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
     private static String angle(int n) { return n<0?"—":n+"°"; }
     private static String driveLabel(String s) {
-        switch(s) { case "IDLE":return "待连接"; case "STOPPED":return "已停止"; case "STARTING":return "准备行驶"; case "MOVING":return "行驶中"; case "F":return "前进中（演示）";case "B":return "后退中（演示）";case "L":return "左转中（演示）";case "R":return "右转中（演示）";default:return s; }
+        switch(s) { case "IDLE":return "Awaiting connection"; case "STOPPED":return "Stopped"; case "STARTING":return "Starting"; case "MOVING":return "Moving"; case "F":return "Forward (demo)";case "B":return "Reverse (demo)";case "L":return "Left (demo)";case "R":return "Right (demo)";default:return s; }
     }
     private void disconnect() { connecting=false; engine.disconnect(); bluetooth.disconnect(); render(); }
 
@@ -239,38 +239,38 @@ public final class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT},101); return;
         }
         BluetoothManager manager=getSystemService(BluetoothManager.class); BluetoothAdapter adapter=manager==null?null:manager.getAdapter();
-        if(adapter==null) { notice("此设备没有可用蓝牙；仍可使用演示模式。"); return; }
-        if(!adapter.isEnabled()) { notice("请在系统蓝牙设置开启蓝牙并配对 HC-05。"); startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); return; }
+        if(adapter==null) { notice("Bluetooth is unavailable on this device."); return; }
+        if(!adapter.isEnabled()) { notice("Enable Bluetooth and pair HC-05 in system settings."); startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); return; }
         List<BluetoothDevice> devices=new ArrayList<>(adapter.getBondedDevices());
         devices.sort(Comparator.comparing(d -> d.getName()==null?"":d.getName()));
         if(devices.isEmpty()) {
-            activeDialog=new AlertDialog.Builder(this).setTitle("还没有已配对设备").setMessage("先到系统蓝牙设置配对 HC-05 / HC-06，然后回到这里连接。")
-                .setPositiveButton("打开设置",(d,w)->startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))).setNegativeButton("取消",null).create(); activeDialog.show(); return;
+            activeDialog=new AlertDialog.Builder(this).setTitle("No paired devices").setMessage("Pair HC-05 / HC-06 in Bluetooth settings, then return here to connect.")
+                .setPositiveButton("Open settings",(d,w)->startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))).setNegativeButton("Cancel",null).create(); activeDialog.show(); return;
         }
         String[] names=new String[devices.size()];
-        for(int i=0;i<devices.size();i++) names[i]=(devices.get(i).getName()==null?"未命名设备":devices.get(i).getName())+"\n"+devices.get(i).getAddress();
-        activeDialog=new AlertDialog.Builder(this).setTitle("选择已配对的 HC-05 / HC-06").setItems(names,(d,index)->{
+        for(int i=0;i<devices.size();i++) names[i]=(devices.get(i).getName()==null?"Unnamed device":devices.get(i).getName())+"\n"+devices.get(i).getAddress();
+        activeDialog=new AlertDialog.Builder(this).setTitle("Select paired HC-05 / HC-06").setItems(names,(d,index)->{
             if(engine.mode==ControllerEngine.Mode.DEMO) engine.disconnect();
             connecting=true; render(); bluetooth.connect(devices.get(index));
-        }).setNegativeButton("取消",null).create(); activeDialog.show();
+        }).setNegativeButton("Cancel",null).create(); activeDialog.show();
     }
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] results) {
         super.onRequestPermissionsResult(requestCode,permissions,results);
         if(requestCode==101) {
             if(results.length>0 && results[0]==PackageManager.PERMISSION_GRANTED) showDevices();
-            else notice("需要「附近的设备 / 蓝牙连接」权限。可在系统应用设置中允许。");
+            else notice("Allow Nearby devices / Bluetooth connection permission in the app settings.");
         }
     }
     private void showSettings() {
         engine.stop(false);
         LinearLayout settings=column(); settings.setPadding(dp(20),dp(8),dp(20),dp(12));
-        CheckBox drive=new CheckBox(this); drive.setText("反转前进 / 后退"); drive.setChecked(reverseDrive); drive.setTextColor(TEXT); drive.setOnCheckedChangeListener((v,c)->{reverseDrive=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseDrive",c).apply();}); settings.addView(drive);
-        CheckBox arm=new CheckBox(this); arm.setText("反转左边夹子开关"); arm.setChecked(reverseArm); arm.setTextColor(TEXT); arm.setOnCheckedChangeListener((v,c)->{reverseArm=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseArm",c).apply();}); settings.addView(arm);
-        CheckBox grip=new CheckBox(this); grip.setText("反转右边夹子开关"); grip.setChecked(reverseGrip); grip.setTextColor(TEXT); grip.setOnCheckedChangeListener((v,c)->{reverseGrip=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseGrip",c).apply();}); settings.addView(grip);
-        settings.addView(label("Bluetooth Classic / SPP：适用于 HC-05 / HC-06；不是 BLE。先在系统设置配对，再在本 App 连接，不能同时被另一终端占用。\n\n串口终端连接后可直接收发，不要求 REC1 握手。旧 PWM-only 程序只支持它本身已有的指令，机械臂与夹爪不会因出现按钮就自动获得支持。\n\nNano / Uno + L298N\nIN1 D2 · IN2 D3 · IN3 D4 · IN4 D7\nENA D5 · ENB D6 · Arm D9 · Grip D10\n\nHC-05 TX → D0；D1 → HC-05 RX 须匹配电平；全部共地。上传程序前拔开 D0 / D1 的模块线。\n\n全部功能及固件断线停止需上传仓库的 REC_BLE_Robot 配套程序。UART_BAUD 默认 9600，须与 HC-05 的 UART 波特率一致；App 中没有 UART 波特率设置。\n\n旧程序不具备固件超时保护，蓝牙断线后未必能停止。按住快捷方向键每 120 ms 重发，松开发 S；急停发 S!。配套固件约 600 ms 无该执行器命令即停止。后台会断开。软件急停不切断电源。\n\n角度和方向须空载校准，默认逻辑角度 90°，上电舵机可能移动。\n\nHandbook：全程尺寸 ≤20×20×20 cm；电池标称 ≤9 V；须有实体断电开关；最多携带两块方块，不可在地面推拉。先完成己方目标放置才能进入 Center Zone。开始、结束、Retry 以裁判指令为准。",12,MUTED,false));
+        CheckBox drive=new CheckBox(this); drive.setText("Reverse forward / reverse"); drive.setChecked(reverseDrive); drive.setTextColor(TEXT); drive.setOnCheckedChangeListener((v,c)->{reverseDrive=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseDrive",c).apply();}); settings.addView(drive);
+        CheckBox arm=new CheckBox(this); arm.setText("Reverse left clamp open / close"); arm.setChecked(reverseArm); arm.setTextColor(TEXT); arm.setOnCheckedChangeListener((v,c)->{reverseArm=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseArm",c).apply();}); settings.addView(arm);
+        CheckBox grip=new CheckBox(this); grip.setText("Reverse right clamp open / close"); grip.setChecked(reverseGrip); grip.setTextColor(TEXT); grip.setOnCheckedChangeListener((v,c)->{reverseGrip=c;getPreferences(MODE_PRIVATE).edit().putBoolean("reverseGrip",c).apply();}); settings.addView(grip);
+        settings.addView(label("Bluetooth Classic / SPP for HC-05 / HC-06; pair in system settings before connecting. Only one terminal can connect at a time.\n\nThe terminal does not require REC1. Available actions depend on the Arduino sketch.\n\nNano / Uno + L298N\nIN1 D2 · IN2 D3 · IN3 D4 · IN4 D7\nENA D5 · ENB D6 · Left clamp D9 · Right clamp D10\n\nHC-05 TX to D0; match voltage levels from D1 to HC-05 RX. Use a common ground. Disconnect D0 / D1 module wires before uploading.\n\nREC_BLE_Robot firmware supports all controls and actuator timeouts. Its UART_BAUD defaults to 9600 and must match the module. The app does not configure UART baud.\n\nHeld actions repeat every 120 ms. Release sends S for wheels; pause sends S! and locks controls until Resume. Companion firmware stops each actuator after about 600 ms without its motion command. Legacy firmware may not stop on disconnection. The app disconnects in the background. Software stop does not cut power.\n\nCalibrate directions and angles with the mechanism unloaded. Servos may move on power-up.\n\nHandbook: maximum size 20 × 20 × 20 cm; nominal battery voltage at most 9 V; physical power switch required; carry at most two blocks and do not push or drag blocks on the ground. Complete your own target placement before entering the Center Zone. Follow referee instructions for start, finish, and Retry.",12,MUTED,false));
         ScrollView scroll=new ScrollView(this); scroll.addView(settings);
-        activeDialog=new AlertDialog.Builder(this).setTitle("设置与连接说明").setView(scroll).setPositiveButton("完成",null)
-            .setNeutralButton("固件与安装指南",(d,w)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/shenenleow10521/RemoteControl/blob/main/android/README.md")))).create(); activeDialog.show();
+        activeDialog=new AlertDialog.Builder(this).setTitle("Settings and connection help").setView(scroll).setPositiveButton("Done",null)
+            .setNeutralButton("Firmware and setup guide",(d,w)->startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://github.com/shenenleow10521/RemoteControl/blob/main/android/README.md")))).create(); activeDialog.show();
     }
     private void appendLog(String text) {
         terminalLog.append(text);
@@ -280,41 +280,41 @@ public final class MainActivity extends Activity {
     private void showTerminal() {
         engine.stop(false);
         LinearLayout terminal=column(); terminal.setPadding(dp(16),0,dp(16),dp(12));
-        terminal.addView(label("Bluetooth Classic / SPP 透传\n连接后可直接发送；不要求特定 Arduino 握手。",11,MUTED,false));
-        terminalOutput=label(terminalLog.length()==0?"等待接收…":terminalLog.toString(),11,MINT,false);
+        terminal.addView(label("Bluetooth Classic / SPP\nSend commands after connecting; no Arduino handshake required.",11,MUTED,false));
+        terminalOutput=label(terminalLog.length()==0?"Waiting for data…":terminalLog.toString(),11,MINT,false);
         terminalOutput.setTypeface(Typeface.MONOSPACE); terminalOutput.setTextIsSelectable(true);
         ScrollView logs=new ScrollView(this); logs.setBackground(background(BG,8)); logs.setPadding(dp(9),dp(9),dp(9),dp(9)); logs.addView(terminalOutput);
         terminal.addView(logs,new LinearLayout.LayoutParams(-1,dp(200)));
-        EditText input=new EditText(this); input.setTextColor(TEXT); input.setHintTextColor(MUTED); input.setHint("输入指令，如 F、S、90…"); input.setSingleLine(true); input.setMaxLines(1); terminal.addView(input);
+        EditText input=new EditText(this); input.setTextColor(TEXT); input.setHintTextColor(MUTED); input.setHint("Enter command: F, S, 90…"); input.setSingleLine(true); input.setMaxLines(1); terminal.addView(input);
         Spinner ending=new Spinner(this);
-        String[] endings={"不加换行 (None)","换行 (LF)","回车 (CR)","回车换行 (CR+LF)"};
+        String[] endings={"None","LF","CR","CR+LF"};
         ending.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,endings)); terminal.addView(ending);
-        terminalSend=button("发送 →",MINT,INK); terminalSend.setEnabled(bluetooth.isConnected());
+        terminalSend=button("Send →",MINT,INK); terminalSend.setEnabled(bluetooth.isConnected());
         terminalSend.setOnClickListener(v -> {
-            if(!bluetooth.isConnected()) { notice("请先连接 HC-05。"); return; }
+            if(!bluetooth.isConnected()) { notice("Connect to HC-05 first."); return; }
             String raw=input.getText().toString();
             if(raw.isEmpty()) return;
-            if(raw.length()>256) { notice("单次输入最多 256 个字符。"); return; }
+            if(raw.length()>256) { notice("Maximum 256 characters per message."); return; }
             String[] suffix={"","\n","\r","\r\n"};
             bluetooth.sendText(raw+suffix[ending.getSelectedItemPosition()],false);
-            appendLog("\n[TX 已提交] "+raw+"\n"); input.setText("");
+            appendLog("\n[TX submitted] "+raw+"\n"); input.setText("");
         }); terminal.addView(terminalSend);
         LinearLayout macros=row();
         for(String command:new String[]{"F","B","L","R","S"}) {
             Button b=button(command,LINE,MINT);
             b.setOnClickListener(v -> {
-                if(!bluetooth.isConnected()) { notice("请先连接 HC-05。"); return; }
-                bluetooth.sendText(command,command.equals("S")); appendLog("\n[TX 已提交] "+command+"\n");
+                if(!bluetooth.isConnected()) { notice("Connect to HC-05 first."); return; }
+                bluetooth.sendText(command,command.equals("S")); appendLog("\n[TX submitted] "+command+"\n");
             }); macros.addView(b,weight());
         }
         terminal.addView(macros);
-        terminal.addView(label("终端快捷键按一次发送一次。F 等是否持续运行由 Arduino 程序决定；需要停止时发送 S。旧固件断线不保证停机。",10,MUTED,false));
-        activeDialog=new AlertDialog.Builder(this).setTitle("串口终端").setView(terminal)
-            .setPositiveButton("关闭",(d,w)->{ engine.stop(false); terminalOutput=null; terminalSend=null; })
-            .setNeutralButton("清空日志",null).create();
+        terminal.addView(label("Terminal shortcuts send once per tap. Motion behavior depends on your Arduino sketch. Send S to stop. Legacy firmware may not stop on disconnection.",10,MUTED,false));
+        activeDialog=new AlertDialog.Builder(this).setTitle("Serial terminal").setView(terminal)
+            .setPositiveButton("Close",(d,w)->{ engine.stop(false); terminalOutput=null; terminalSend=null; })
+            .setNeutralButton("Clear log",null).create();
         activeDialog.setOnCancelListener(d -> { engine.stop(false); terminalOutput=null; terminalSend=null; });
         activeDialog.show();
-        activeDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> { terminalLog.setLength(0); terminalOutput.setText("日志已清空"); });
+        activeDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> { terminalLog.setLength(0); terminalOutput.setText("Log cleared"); });
     }
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus); if(!hasFocus && engine!=null) engine.stop(false);

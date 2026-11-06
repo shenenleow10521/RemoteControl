@@ -25,7 +25,7 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                 assertTrue("App must be landscape",root.getWidth()>root.getHeight());
                 List<Button> buttons=new ArrayList<>();collect(root,buttons);
                 assertEquals("Eleven controls and Bluetooth connection",12,buttons.size());
-                String[] required={"前进","后退","左转","右转","暂停","左夹子\n开","左夹子\n关","右夹子\n开","右夹子\n关"};
+                String[] required={"Forward","Reverse","Left","Right","Pause","Left clamp\nOpen","Left clamp\nClose","Right clamp\nOpen","Right clamp\nClose"};
                 for(String name:required){
                     Button match=null;
                     for(Button button:buttons)if(button.getText().toString().contains(name)){match=button;break;}
@@ -37,7 +37,7 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                     float dp=activity.getResources().getDisplayMetrics().density;
                     assertTrue("Touch target too short "+name,match.getHeight()/dp>=48);
                 }
-                for(String name:new String[]{"加速","减速"}){
+                for(String name:new String[]{"Speed up","Speed down"}){
                     Button match=null;
                     for(Button b:buttons)if(name.contentEquals(b.getContentDescription()==null?"":b.getContentDescription())){match=b;break;}
                     assertNotNull("Missing "+name,match);
@@ -52,9 +52,9 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                     ControllerEngine engine=(ControllerEngine)field.get(activity);engine.demo();
                     Button pause=null,up=null,plus=null;
                     for(Button b:buttons){
-                        if(b.getText().toString().contains("暂停"))pause=b;
-                        if(b.getText().toString().contains("前进"))up=b;
-                        if("加速".contentEquals(b.getContentDescription()==null?"":b.getContentDescription()))plus=b;
+                        if(b.getText().toString().contains("Pause"))pause=b;
+                        if(b.getText().toString().contains("Forward"))up=b;
+                        if("Speed up".contentEquals(b.getContentDescription()==null?"":b.getContentDescription()))plus=b;
                     }
                     assertNotNull(pause);assertNotNull(up);assertNotNull(plus);
                     java.lang.reflect.Field progressField=MainActivity.class.getDeclaredField("speedProgress");progressField.setAccessible(true);
@@ -62,7 +62,7 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                     assertEquals(200,bar.getProgress());plus.performClick();assertEquals(220,bar.getProgress());
                     engine.start(ControllerEngine.Group.DRIVE,"held",'F');pause.performClick();
                     assertTrue(engine.locked);assertEquals(0,engine.heldCount());assertFalse(up.isEnabled());assertFalse(plus.isEnabled());
-                    assertTrue(pause.getText().toString().contains("继续"));
+                    assertTrue(pause.getText().toString().contains("Resume"));
                     pause.performClick();assertFalse(engine.locked);assertTrue(up.isEnabled());assertEquals(0,engine.heldCount());
                     engine.disconnect();
                 } catch(ReflectiveOperationException e){throw new AssertionError(e);}
