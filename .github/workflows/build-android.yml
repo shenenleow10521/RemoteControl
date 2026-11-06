@@ -61,11 +61,11 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RECRemote-Pad-v1.0.5.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RECRemote-Pad-v1.0.6.apk
       - uses: actions/upload-artifact@v4
         with:
           name: RECRemote-Android-APK
-          path: dist/RECRemote-Pad-v1.0.5.apk
+          path: dist/RECRemote-Pad-v1.0.6.apk
           if-no-files-found: error
           retention-days: 30
       - name: Publish public Android download
@@ -73,11 +73,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="android-v1.0.5-build.${GITHUB_RUN_NUMBER}"
+          tag="android-v1.0.6-build.${GITHUB_RUN_NUMBER}"
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" dist/RECRemote-Pad-v1.0.5.apk --clobber
+            gh release upload "$tag" dist/RECRemote-Pad-v1.0.6.apk --clobber
           else
-            gh release create "$tag" dist/RECRemote-Pad-v1.0.5.apk --target "$GITHUB_SHA" --title 'REC Remote for Android — Development APK' --notes-file android/RELEASE_NOTES.md
+            gh release create "$tag" dist/RECRemote-Pad-v1.0.6.apk --target "$GITHUB_SHA" --title 'REC Remote for Android — Development APK' --notes-file android/RELEASE_NOTES.md
           fi
       - name: Save verified layout screenshot
         if: always()

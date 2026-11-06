@@ -48,7 +48,7 @@ public final class MainActivity extends Activity {
     private ClassicBluetooth bluetooth;
     private LinearLayout content;
     private TextView connectionTitle, connectionDetail;
-    private Button connectButton, padStop;
+    private Button connectButton, padStop, speedUp, speedDown;
     private boolean connecting, destroyed, reverseArm, reverseGrip = true, reverseDrive = true;
     private AlertDialog activeDialog;
     private TextView terminalOutput;
@@ -101,7 +101,7 @@ public final class MainActivity extends Activity {
         content=column(); content.setPadding(dp(10),dp(6),dp(10),dp(6));
         outer.addView(content,new LinearLayout.LayoutParams(-1,-1)); setContentView(outer);
         LinearLayout header=row();
-        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.5",14,MINT,true); status.addView(connectionTitle);
+        LinearLayout status=column(); connectionTitle=label("REC PAD 1.0.6",14,MINT,true); status.addView(connectionTitle);
         connectionDetail=label("",10,MUTED,false);status.addView(connectionDetail);
         header.addView(status,new LinearLayout.LayoutParams(0,-1,1));
         connectButton=button("连接蓝牙",MINT,INK);connectButton.setOnClickListener(v->{
@@ -117,6 +117,8 @@ public final class MainActivity extends Activity {
             if(r==0&&c==1)cell=move("↑\n前进",ControllerEngine.Group.DRIVE,'F');
             else if(r==1&&c==0)cell=move("←\n左转",ControllerEngine.Group.DRIVE,'L');
             else if(r==1&&c==2)cell=move("→\n右转",ControllerEngine.Group.DRIVE,'R');
+            else if(r==2&&c==0)cell=speedControl(true);
+            else if(r==2&&c==2)cell=speedControl(false);
             else if(r==2&&c==1)cell=move("↓\n后退",ControllerEngine.Group.DRIVE,'B');
             else if(r==1&&c==1){
                 padStop=button("■\n停止",Color.rgb(64,43,47),Color.rgb(255,180,170));
@@ -136,6 +138,23 @@ public final class MainActivity extends Activity {
         controls.addView(clamps,new LinearLayout.LayoutParams(0,-1,1));
         content.addView(controls,new LinearLayout.LayoutParams(-1,0,1));
     }
+
+    private View speedControl(boolean faster) {
+        LinearLayout holder=column();holder.setGravity(Gravity.CENTER);
+        Button b=button(faster?"＋":"−",MINT,INK);
+        b.setContentDescription(faster?"加速":"减速");
+        b.setMinWidth(0);b.setMinimumWidth(0);b.setMinHeight(0);b.setMinimumHeight(0);
+        b.setPadding(0,0,0,0);b.setTextSize(24);b.setGravity(Gravity.CENTER);
+        GradientDrawable circle=new GradientDrawable();circle.setShape(GradientDrawable.OVAL);circle.setColor(MINT);
+        b.setBackground(circle);
+        b.setOnClickListener(v->engine.changeSpeed(faster));
+        holder.addView(b,new LinearLayout.LayoutParams(dp(48),dp(48)));
+        TextView caption=label(faster?"加速":"减速",10,MINT,false);
+        caption.setPadding(0,0,0,0);holder.addView(caption);
+        if(faster)speedUp=b;else speedDown=b;
+        return holder;
+    }
+
     private void gridCell(GridLayout grid,View cell,int row,int column){
         if(cell instanceof Button){
             Button b=(Button)cell;b.setMinHeight(0);b.setMinimumHeight(0);b.setMinWidth(0);b.setMinimumWidth(0);
@@ -174,10 +193,11 @@ public final class MainActivity extends Activity {
     }
     private void render() {
         boolean connected=bluetooth.isConnected(), enabled=engine.ready&&!engine.locked;
-        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.5 · 未连接");
+        connectionTitle.setText(connecting?"正在连接…":connected?engine.name:"REC PAD 1.0.6 · 未连接");
         connectionDetail.setText(engine.locked?"动作已停止，点中间「恢复」继续":connected?"HC-05 / SPP · 按住操作，松开停止":"先在系统蓝牙设置配对 HC-05");
         connectButton.setText(connecting||connected?"断开蓝牙":"连接蓝牙");
         for(Button b:motion){b.setEnabled(enabled);b.setAlpha(enabled?1f:.35f);}
+        for(Button b:new Button[]{speedUp,speedDown}){b.setEnabled(engine.ready);b.setAlpha(engine.ready?1f:.35f);}
         padStop.setEnabled(engine.ready);padStop.setAlpha(engine.ready?1f:.4f);
         padStop.setText(engine.locked?"▶  恢复":"■  停止");
         if(terminalSend!=null)terminalSend.setEnabled(connected);

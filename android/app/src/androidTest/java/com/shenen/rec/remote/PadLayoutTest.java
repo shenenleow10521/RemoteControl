@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class PadLayoutTest extends InstrumentationTestCase {
-    public void testAllNineControlsFitLandscapeViewport() throws Throwable {
+    public void testAllControlsFitLandscapeViewport() throws Throwable {
         Intent intent=new Intent();
         intent.setClassName(getInstrumentation().getTargetContext().getPackageName(),"com.shenen.rec.remote.MainActivity");
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -24,7 +24,7 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                 View root=activity.findViewById(android.R.id.content);
                 assertTrue("App must be landscape",root.getWidth()>root.getHeight());
                 List<Button> buttons=new ArrayList<>();collect(root,buttons);
-                assertEquals("Only nine controls and Bluetooth connection",10,buttons.size());
+                assertEquals("Eleven controls and Bluetooth connection",12,buttons.size());
                 String[] required={"前进","后退","左转","右转","停止","左夹子\n开","左夹子\n关","右夹子\n开","右夹子\n关"};
                 for(String name:required){
                     Button match=null;
@@ -36,6 +36,16 @@ public final class PadLayoutTest extends InstrumentationTestCase {
                     assertEquals("Clipped horizontally "+name,match.getWidth(),visible.width());
                     float dp=activity.getResources().getDisplayMetrics().density;
                     assertTrue("Touch target too short "+name,match.getHeight()/dp>=48);
+                }
+                for(String name:new String[]{"加速","减速"}){
+                    Button match=null;
+                    for(Button b:buttons)if(name.contentEquals(b.getContentDescription()==null?"":b.getContentDescription())){match=b;break;}
+                    assertNotNull("Missing "+name,match);
+                    Rect visible=new Rect();
+                    assertTrue("Not visible "+name,match.getGlobalVisibleRect(visible));
+                    assertEquals(match.getWidth(),visible.width());assertEquals(match.getHeight(),visible.height());
+                    assertEquals("Speed button must be round",match.getWidth(),match.getHeight());
+                    assertTrue("Speed touch target too small",match.getHeight()/activity.getResources().getDisplayMetrics().density>=48);
                 }
             });
             Bitmap screenshot=getInstrumentation().getUiAutomation().takeScreenshot();

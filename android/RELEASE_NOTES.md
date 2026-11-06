@@ -1,1 +1,7 @@
-Version 1.0.5: replace scrolling, content-sized rows with a viewport-filling weighted 3x3 direction grid and 2x2 clamp grid. All nine controls remain visible on small landscape screens. Header displays REC PAD 1.0.5. Same Pad package and cached signing identity as 1.0.4. Emulator layout verification checks all controls for clipping at 800x360 and captures the rendered screen. Bluetooth/physical robot behavior still needs device testing.
+# REC Remote Pad 1.0.6
+
+- Added small circular speed controls beside Reverse: acceleration (+) on the left, deceleration (-) on the right.
+- Each tap sends the existing Bluetooth speed command once.
+- Kept the landscape direction pad, stop button, clamp controls and Bluetooth connection unchanged.
+- Retained the Pad application ID and cached development signing identity for updates.
+- Verified the controls fit the small landscape emulator viewport.
